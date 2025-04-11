@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Monitor, 
-  ServerStack, 
+  Server, 
   CalendarClock, 
   AlertTriangle,
   CheckCircle,
@@ -66,7 +65,7 @@ const summaryMetrics = [
     title: "Assemblies", 
     value: "24", 
     description: "2 under maintenance", 
-    icon: <ServerStack className="h-6 w-6" /> 
+    icon: <Server className="h-6 w-6" /> 
   },
   { 
     title: "Pending Tasks", 

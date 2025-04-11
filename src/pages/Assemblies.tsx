@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
@@ -37,7 +36,7 @@ import {
   LayoutList, 
   LayoutGrid, 
   Search,
-  ServerStack,
+  Server,
   Monitor,
   Printer,
   Network,
@@ -121,7 +120,7 @@ const AVAILABLE_COMPONENTS = [
 const getComponentIcon = (type: string) => {
   switch (type) {
     case "Server":
-      return <ServerStack className="h-5 w-5" />;
+      return <Server className="h-5 w-5" />;
     case "Laptop":
     case "Tablet":
     case "Desktop":
