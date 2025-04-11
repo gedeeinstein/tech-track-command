@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// IT Inventory specific colors
+				status: {
+					active: '#10B981',
+					maintenance: '#F59E0B',
+					decommissioned: '#EF4444',
+					warning: '#F97316',
+					info: '#3B82F6',
 				}
 			},
 			borderRadius: {
