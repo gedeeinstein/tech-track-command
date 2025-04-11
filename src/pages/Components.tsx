@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
+  CardContent,
+  CardDescription,
+  CardFooter,
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
@@ -22,230 +21,129 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 import { 
-  Plus, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
   LayoutList, 
   LayoutGrid, 
-  Search,
-  Cpu,
-  Memory,
-  HardDrive,
-  Maximize2,
-  Printer,
-  Battery,
-  Fan,
-  AlertCircle
+  Search, 
+  MoreHorizontal, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Component,
+  Server,
+  HardDrive
 } from "lucide-react";
-import { toast } from "sonner";
 
-// Component types
-export type ComponentType = 
-  | "CPU" 
-  | "RAM" 
-  | "Storage" 
-  | "GPU" 
-  | "Motherboard" 
-  | "PSU" 
-  | "Cooling" 
-  | "Case" 
-  | "Peripheral" 
-  | "Network" 
-  | "Other";
-
-interface ComponentItem {
-  id: string;
-  name: string;
-  type: ComponentType;
-  manufacturer: string;
-  model: string;
-  serialNumber?: string;
-  specifications: string;
-  purchaseDate?: string;
-  warrantyEnd?: string;
-  status: "Available" | "In Use" | "Maintenance" | "Decommissioned";
-  notes?: string;
-}
-
-// Mock component data
-const MOCK_COMPONENTS: ComponentItem[] = [
+// Mock components data
+const MOCK_COMPONENTS = [
   {
-    id: "CPU001",
-    name: "Intel Core i7-12700K",
-    type: "CPU",
-    manufacturer: "Intel",
-    model: "i7-12700K",
-    serialNumber: "INTL7829374",
-    specifications: "12 cores, 20 threads, 3.6GHz base clock, 5.0GHz boost clock",
-    purchaseDate: "2023-05-15",
-    warrantyEnd: "2026-05-15",
-    status: "Available",
-    notes: "High-performance CPU for workstations"
+    id: "CMP001",
+    name: "Dell XPS 15",
+    description: "High-performance laptop for developers",
+    type: "Laptop",
+    status: "Active",
+    location: "IT Department",
+    purchaseDate: "2023-08-15",
+    warrantyExpiration: "2026-08-15",
+    specifications: {
+      cpu: "Intel Core i7",
+      ram: "16GB",
+      storage: "512GB SSD"
+    }
   },
   {
-    id: "RAM001",
-    name: "Corsair Vengeance 32GB DDR4",
-    type: "RAM",
-    manufacturer: "Corsair",
-    model: "Vengeance LPX",
-    serialNumber: "CRSV982634",
-    specifications: "32GB (2x16GB) DDR4-3600MHz CL18",
-    purchaseDate: "2023-06-10",
-    warrantyEnd: "2028-06-10",
-    status: "In Use",
-    notes: "Installed in Design Team workstations"
+    id: "CMP002",
+    name: "Cisco Switch 24-Port",
+    description: "24-port gigabit ethernet switch",
+    type: "Networking",
+    status: "Active",
+    location: "Server Room A",
+    purchaseDate: "2022-11-01",
+    warrantyExpiration: "2027-11-01",
+    specifications: {
+      ports: "24 x 1GbE",
+      management: "Web-based GUI"
+    }
   },
   {
-    id: "STO001",
-    name: "Samsung 980 Pro 1TB",
-    type: "Storage",
-    manufacturer: "Samsung",
-    model: "980 Pro",
-    serialNumber: "SAM87345623",
-    specifications: "1TB NVMe SSD, PCIe 4.0, 7000MB/s read, 5000MB/s write",
-    purchaseDate: "2023-04-22",
-    warrantyEnd: "2028-04-22",
-    status: "Available",
-    notes: "High-speed storage for workstations"
+    id: "CMP003",
+    name: "HP LaserJet Pro",
+    description: "Monochrome laser printer",
+    type: "Printer",
+    status: "Maintenance",
+    location: "Office Area",
+    purchaseDate: "2024-01-20",
+    warrantyExpiration: "2025-01-20",
+    specifications: {
+      printSpeed: "30 ppm",
+      resolution: "600 dpi"
+    }
   },
   {
-    id: "GPU001",
-    name: "NVIDIA RTX 4080",
-    type: "GPU",
-    manufacturer: "NVIDIA",
-    model: "RTX 4080",
-    serialNumber: "NVD87236498",
-    specifications: "16GB GDDR6X, 9728 CUDA cores",
-    purchaseDate: "2023-02-15",
-    warrantyEnd: "2026-02-15",
-    status: "In Use",
-    notes: "Used for 3D rendering workstations"
-  },
-  {
-    id: "MB001",
-    name: "ASUS ROG Maximus Z790",
-    type: "Motherboard",
-    manufacturer: "ASUS",
-    model: "ROG Maximus Z790 Hero",
-    serialNumber: "ASUSMB734982",
-    specifications: "Intel Z790 chipset, DDR5, PCIe 5.0, Wi-Fi 6E",
-    purchaseDate: "2023-03-10",
-    warrantyEnd: "2026-03-10",
-    status: "Available",
-    notes: "High-end motherboard for workstations"
+    id: "CMP004",
+    name: "Dell PowerEdge R740",
+    description: "2U rack server for enterprise applications",
+    type: "Server",
+    status: "Active",
+    location: "Server Room A",
+    purchaseDate: "2023-05-10",
+    warrantyExpiration: "2028-05-10",
+    specifications: {
+      cpu: "Intel Xeon Gold",
+      ram: "64GB",
+      storage: "2TB HDD"
+    }
   }
 ];
 
-// Get icon for component type
-const getComponentIcon = (type: ComponentType) => {
+// Component icons based on type
+const getComponentIcon = (type: string) => {
   switch (type) {
-    case "CPU":
-      return <Cpu className="h-5 w-5" />;
-    case "RAM":
-      return <Memory className="h-5 w-5" />;
-    case "Storage":
-      return <HardDrive className="h-5 w-5" />;
-    case "GPU":
-      return <Maximize2 className="h-5 w-5" />;
-    case "Peripheral":
-      return <Printer className="h-5 w-5" />;
-    case "PSU":
-      return <Battery className="h-5 w-5" />;
-    case "Cooling":
-      return <Fan className="h-5 w-5" />;
+    case "Server":
+      return <Server className="h-5 w-5" />;
+    case "Laptop":
+    case "Tablet":
+    case "Desktop":
+      return <Component className="h-5 w-5" />;
     default:
-      return <AlertCircle className="h-5 w-5" />;
+      return <HardDrive className="h-5 w-5" />;
   }
 };
 
-const componentTypes: ComponentType[] = [
-  "CPU",
-  "RAM",
-  "Storage",
-  "GPU",
-  "Motherboard",
-  "PSU",
-  "Cooling",
-  "Case",
-  "Peripheral",
-  "Network",
-  "Other"
-];
-
 const Components: React.FC = () => {
-  const [components, setComponents] = useState<ComponentItem[]>(MOCK_COMPONENTS);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [components, setComponents] = useState(MOCK_COMPONENTS);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [formOpen, setFormOpen] = useState(false);
-  const [currentComponent, setCurrentComponent] = useState<ComponentItem | null>(null);
-  const form = useForm<ComponentItem>();
+  const [currentcomponent, setCurrentcomponent] = useState<any | null>(null);
 
   // Filter components based on search
-  const filteredComponents = components.filter(component => 
+  const filteredcomponents = components.filter(component => 
     component.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    component.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    component.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    component.type.toLowerCase().includes(searchQuery.toLowerCase())
+    component.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddEdit = (component: ComponentItem | null = null) => {
-    setCurrentComponent(component);
-    form.reset(component || {
-      id: `COMP${Math.floor(Math.random() * 10000).toString().padStart(3, '0')}`,
-      name: "",
-      type: "Other",
-      manufacturer: "",
-      model: "",
-      serialNumber: "",
-      specifications: "",
-      status: "Available",
-      notes: ""
-    });
+  const handleAddEdit = (component: any = null) => {
+    setCurrentcomponent(component);
     setFormOpen(true);
   };
 
-  const handleDeleteComponent = (id: string) => {
-    setComponents(components.filter(component => component.id !== id));
-    toast.success("Component deleted successfully");
+  const handleSavecomponent = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, you would save the component to your backend
+    // For now, just close the dialog
+    setFormOpen(false);
+    setCurrentcomponent(null);
   };
 
-  const handleSaveComponent = (data: any) => {
-    if (currentComponent) {
-      // Update existing component
-      setComponents(components.map(component => 
-        component.id === currentComponent.id ? { ...data } : component
-      ));
-      toast.success("Component updated successfully");
-    } else {
-      // Add new component
-      setComponents([...components, data]);
-      toast.success("Component added successfully");
-    }
-    setFormOpen(false);
+  const handleDeletecomponent = (id: string) => {
+    // In a real app, you would delete from your backend
+    setComponents(components.filter(component => component.id !== id));
   };
 
   return (
@@ -254,12 +152,12 @@ const Components: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Components</h1>
           <p className="text-muted-foreground">
-            Manage individual components that can be used in assemblies
+            Manage individual hardware and software components
           </p>
         </div>
         <Button size="sm" className="flex items-center gap-1" onClick={() => handleAddEdit()}>
           <Plus size={16} />
-          <span>Add Component</span>
+          <span>Create Component</span>
         </Button>
       </div>
 
@@ -297,15 +195,12 @@ const Components: React.FC = () => {
 
       {/* Components Grid/List View */}
       {viewMode === "grid" ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredComponents.map((component) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredcomponents.map((component) => (
             <Card key={component.id} className="flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    {getComponentIcon(component.type)}
-                    <CardTitle className="text-lg">{component.name}</CardTitle>
-                  </div>
+                  <CardTitle>{component.name}</CardTitle>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -317,7 +212,7 @@ const Components: React.FC = () => {
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteComponent(component.id)}>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeletecomponent(component.id)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -325,107 +220,66 @@ const Components: React.FC = () => {
                   </DropdownMenu>
                 </div>
                 <div className="flex items-center mt-1">
-                  <span className={cn(
-                    "px-2 py-1 rounded-full text-xs font-medium",
-                    component.type === "CPU" && "bg-blue-100 text-blue-800",
-                    component.type === "RAM" && "bg-purple-100 text-purple-800",
-                    component.type === "Storage" && "bg-green-100 text-green-800",
-                    component.type === "GPU" && "bg-yellow-100 text-yellow-800",
-                    component.type === "Motherboard" && "bg-red-100 text-red-800",
-                    component.type === "PSU" && "bg-orange-100 text-orange-800",
-                    component.type === "Cooling" && "bg-cyan-100 text-cyan-800",
-                    component.type === "Case" && "bg-gray-100 text-gray-800",
-                    component.type === "Peripheral" && "bg-pink-100 text-pink-800",
-                    component.type === "Network" && "bg-indigo-100 text-indigo-800",
-                    component.type === "Other" && "bg-gray-100 text-gray-800"
-                  )}>
-                    {component.type}
-                  </span>
-                  <span className={cn(
-                    "ml-2 px-2 py-1 rounded-full text-xs font-medium",
-                    component.status === "Available" && "bg-green-100 text-green-800",
-                    component.status === "In Use" && "bg-blue-100 text-blue-800",
-                    component.status === "Maintenance" && "bg-yellow-100 text-yellow-800",
-                    component.status === "Decommissioned" && "bg-gray-100 text-gray-800"
-                  )}>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
                     {component.status}
                   </span>
                 </div>
+                <CardDescription className="pt-1">{component.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-1">
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium">Manufacturer:</span> {component.manufacturer}
-                  </div>
-                  <div>
-                    <span className="font-medium">Model:</span> {component.model}
-                  </div>
-                  <div>
-                    <span className="font-medium">Specs:</span>
-                    <p className="text-muted-foreground text-xs mt-1 line-clamp-2">
-                      {component.specifications}
-                    </p>
-                  </div>
+                <div className="text-sm">
+                  <div className="font-medium mb-2">Type: {component.type}</div>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      {getComponentIcon(component.type)}
+                      <span className="truncate">{component.name}</span>
+                    </li>
+                  </ul>
                 </div>
               </CardContent>
               <CardFooter className="text-xs text-muted-foreground border-t pt-3">
                 <div className="w-full flex justify-between">
-                  <span>ID: {component.id}</span>
-                  {component.serialNumber && <span>S/N: {component.serialNumber}</span>}
+                  <span>Location: {component.location}</span>
+                  <span>Warranty Expiration: {component.warrantyExpiration}</span>
                 </div>
               </CardFooter>
             </Card>
           ))}
-          {filteredComponents.length === 0 && (
+          {filteredcomponents.length === 0 && (
             <div className="col-span-full text-center py-10">
-              <p className="text-muted-foreground">No components found matching your search.</p>
+              <p className="text-muted-foreground">No components found.</p>
             </div>
           )}
         </div>
       ) : (
         <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Manufacturer</TableHead>
-                <TableHead className="hidden md:table-cell">Model</TableHead>
-                <TableHead className="hidden lg:table-cell">Specifications</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredComponents.map((component) => (
-                <TableRow key={component.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getComponentIcon(component.type)}
-                      <span>{component.type}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left p-3 font-medium">Name</th>
+                <th className="text-left p-3 font-medium hidden md:table-cell">Type</th>
+                <th className="text-left p-3 font-medium hidden md:table-cell">Status</th>
+                <th className="text-left p-3 font-medium hidden lg:table-cell">Location</th>
+                <th className="text-left p-3 font-medium hidden lg:table-cell">Warranty Expiration</th>
+                <th className="p-3 w-[60px]"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredcomponents.map((component) => (
+                <tr key={component.id} className="border-b">
+                  <td className="p-3">
                     <div className="font-medium">{component.name}</div>
-                    <div className="text-xs text-muted-foreground">ID: {component.id}</div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{component.manufacturer}</TableCell>
-                  <TableCell className="hidden md:table-cell">{component.model}</TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="truncate max-w-[300px]">{component.specifications}</div>
-                  </TableCell>
-                  <TableCell>
-                    <span className={cn(
-                      "px-2 py-1 rounded-full text-xs font-medium",
-                      component.status === "Available" && "bg-green-100 text-green-800",
-                      component.status === "In Use" && "bg-blue-100 text-blue-800",
-                      component.status === "Maintenance" && "bg-yellow-100 text-yellow-800",
-                      component.status === "Decommissioned" && "bg-gray-100 text-gray-800"
-                    )}>
+                    <div className="text-xs text-muted-foreground">{component.description}</div>
+                  </td>
+                  <td className="p-3 hidden md:table-cell">{component.type}</td>
+                  <td className="p-3 hidden md:table-cell">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
                       {component.status}
                     </span>
-                  </TableCell>
-                  <TableCell className="text-right">
+                  </td>
+                  <td className="p-3 hidden lg:table-cell">{component.location}</td>
+                  <td className="p-3 hidden lg:table-cell">{component.warrantyExpiration}</td>
+                  <td className="p-3">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -437,159 +291,122 @@ const Components: React.FC = () => {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteComponent(component.id)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeletecomponent(component.id)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ))}
-              {filteredComponents.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6">
-                    No components found matching your search.
-                  </TableCell>
-                </TableRow>
+              {filteredcomponents.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center p-6">
+                    No components found.
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* Add/Edit Component Form Dialog */}
+      {/* Add/Edit component Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{currentComponent ? "Edit Component" : "Add New Component"}</DialogTitle>
+            <DialogTitle>{currentcomponent ? "Edit Component" : "Create New Component"}</DialogTitle>
             <DialogDescription>
-              {currentComponent 
+              {currentcomponent 
                 ? "Update the details of the selected component." 
                 : "Enter the details of the new component."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={form.handleSubmit(handleSaveComponent)}>
-            <Tabs defaultValue="details" className="w-full mt-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="details">Basic Details</TabsTrigger>
-                <TabsTrigger value="specifications">Specifications</TabsTrigger>
+          <form onSubmit={handleSavecomponent}>
+            <Tabs defaultValue="details">
+              <TabsList className="grid w-full grid-cols-1">
+                <TabsTrigger value="details">Details</TabsTrigger>
               </TabsList>
-              
               <TabsContent value="details" className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4">
                   <div className="grid gap-2">
-                    <label htmlFor="type" className="text-sm font-medium">Type</label>
-                    <select 
-                      id="type" 
-                      {...form.register("type")}
-                      className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
-                    >
-                      {componentTypes.map(type => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="status" className="text-sm font-medium">Status</label>
-                    <select 
-                      id="status" 
-                      {...form.register("status")}
-                      className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
-                    >
-                      <option value="Available">Available</option>
-                      <option value="In Use">In Use</option>
-                      <option value="Maintenance">Maintenance</option>
-                      <option value="Decommissioned">Decommissioned</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="grid gap-2">
-                  <label htmlFor="name" className="text-sm font-medium">Component Name</label>
-                  <Input id="name" {...form.register("name")} placeholder="Enter component name" />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="manufacturer" className="text-sm font-medium">Manufacturer</label>
+                    <Label htmlFor="name">Component Name</Label>
                     <Input 
-                      id="manufacturer" 
-                      {...form.register("manufacturer")} 
-                      placeholder="Manufacturer" 
+                      id="name" 
+                      defaultValue={currentcomponent?.name || ""} 
+                      placeholder="Enter component name" 
                     />
                   </div>
                   <div className="grid gap-2">
-                    <label htmlFor="model" className="text-sm font-medium">Model</label>
-                    <Input 
-                      id="model" 
-                      {...form.register("model")} 
-                      placeholder="Model" 
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea 
+                      id="description" 
+                      defaultValue={currentcomponent?.description || ""} 
+                      placeholder="Describe the component and its purpose" 
                     />
                   </div>
-                </div>
-                
-                <div className="grid gap-2">
-                  <label htmlFor="serialNumber" className="text-sm font-medium">Serial Number</label>
-                  <Input 
-                    id="serialNumber" 
-                    {...form.register("serialNumber")} 
-                    placeholder="Serial number (optional)" 
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="purchaseDate" className="text-sm font-medium">Purchase Date</label>
-                    <Input 
-                      id="purchaseDate" 
-                      type="date" 
-                      {...form.register("purchaseDate")} 
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="type">Type</Label>
+                      <select 
+                        id="type" 
+                        defaultValue={currentcomponent?.type || "Laptop"} 
+                        className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
+                      >
+                        <option value="Laptop">Laptop</option>
+                        <option value="Server">Server</option>
+                        <option value="Networking">Networking</option>
+                        <option value="Printer">Printer</option>
+                      </select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="status">Status</Label>
+                      <select 
+                        id="status" 
+                        defaultValue={currentcomponent?.status || "Active"} 
+                        className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Decommissioned">Decommissioned</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="warrantyEnd" className="text-sm font-medium">Warranty End</label>
-                    <Input 
-                      id="warrantyEnd" 
-                      type="date" 
-                      {...form.register("warrantyEnd")} 
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input 
+                        id="location" 
+                        defaultValue={currentcomponent?.location || ""} 
+                        placeholder="Location" 
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="purchaseDate">Purchase Date</Label>
+                      <Input 
+                        id="purchaseDate" 
+                        type="date" 
+                        defaultValue={currentcomponent?.purchaseDate || ""} 
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="warrantyExpiration">Warranty Expiration</Label>
+                      <Input 
+                        id="warrantyExpiration" 
+                        type="date" 
+                        defaultValue={currentcomponent?.warrantyExpiration || ""} 
+                      />
+                    </div>
                   </div>
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="specifications" className="space-y-4 pt-4">
-                <div className="grid gap-2">
-                  <label htmlFor="specifications" className="text-sm font-medium">Technical Specifications</label>
-                  <Textarea 
-                    id="specifications" 
-                    {...form.register("specifications")} 
-                    placeholder="Enter detailed specifications" 
-                    rows={4}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <label htmlFor="notes" className="text-sm font-medium">Additional Notes</label>
-                  <Textarea 
-                    id="notes" 
-                    {...form.register("notes")} 
-                    placeholder="Enter any additional notes" 
-                    rows={3}
-                  />
-                </div>
-                
-                {/* Hidden fields */}
-                <input type="hidden" {...form.register("id")} />
               </TabsContent>
             </Tabs>
-            
             <DialogFooter className="mt-6">
-              <Button variant="outline" type="button" onClick={() => setFormOpen(false)}>
-                Cancel
-              </Button>
               <Button type="submit">
-                {currentComponent ? "Update Component" : "Add Component"}
+                {currentcomponent ? "Update Component" : "Create Component"}
               </Button>
             </DialogFooter>
           </form>
