@@ -12,11 +12,13 @@ import {
   BarChart,
   Menu,
   X,
+  Component,
 } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
   { path: "/assets", label: "Assets", icon: <Monitor size={20} /> },
+  { path: "/components", label: "Components", icon: <Component size={20} /> },
   { path: "/assemblies", label: "Assemblies", icon: <Server size={20} /> },
   { path: "/maintenance", label: "Maintenance", icon: <CalendarClock size={20} /> },
   { path: "/users", label: "Users", icon: <Users size={20} /> },
