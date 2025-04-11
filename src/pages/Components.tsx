@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Card, 
@@ -25,6 +26,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   LayoutList, 
@@ -34,69 +50,78 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Component,
-  Server,
-  HardDrive
+  HardDrive,
+  Cpu,
+  MemoryStick,
+  Power,
+  Monitor,
+  Box,
+  Keyboard,
+  Router
 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { Component, COMPONENT_TYPES, COMPONENT_SUBTYPES, MANUFACTURERS } from "@/features/assemblies/types";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock components data
-const MOCK_COMPONENTS = [
+const MOCK_COMPONENTS: Component[] = [
   {
     id: "CMP001",
-    name: "Dell XPS 15",
-    description: "High-performance laptop for developers",
-    type: "Laptop",
-    status: "Active",
-    location: "IT Department",
-    purchaseDate: "2023-08-15",
-    warrantyExpiration: "2026-08-15",
+    name: "Intel Core i7-12700K",
+    type: "Processor",
+    subtype: "Intel",
+    serialNumber: "INTL87423523",
+    manufacturer: "Intel",
+    model: "Core i7-12700K",
     specifications: {
-      cpu: "Intel Core i7",
-      ram: "16GB",
-      storage: "512GB SSD"
+      cores: "12",
+      threads: "20",
+      baseFrequency: "3.6 GHz",
+      turboFrequency: "5.0 GHz"
     }
   },
   {
     id: "CMP002",
-    name: "Cisco Switch 24-Port",
-    description: "24-port gigabit ethernet switch",
-    type: "Networking",
-    status: "Active",
-    location: "Server Room A",
-    purchaseDate: "2022-11-01",
-    warrantyExpiration: "2027-11-01",
+    name: "Kingston HyperX 16GB DDR4",
+    type: "RAM",
+    subtype: "DDR4",
+    serialNumber: "KHX8734534",
+    manufacturer: "Kingston",
+    model: "HyperX Fury",
     specifications: {
-      ports: "24 x 1GbE",
-      management: "Web-based GUI"
+      capacity: "16GB",
+      speed: "3200MHz",
+      latency: "CL16"
     }
   },
   {
     id: "CMP003",
-    name: "HP LaserJet Pro",
-    description: "Monochrome laser printer",
-    type: "Printer",
-    status: "Maintenance",
-    location: "Office Area",
-    purchaseDate: "2024-01-20",
-    warrantyExpiration: "2025-01-20",
+    name: "Samsung 970 EVO Plus 1TB",
+    type: "Storage",
+    subtype: "NVMe",
+    serialNumber: "SMNGPND792354",
+    manufacturer: "Samsung",
+    model: "970 EVO Plus",
     specifications: {
-      printSpeed: "30 ppm",
-      resolution: "600 dpi"
+      capacity: "1TB",
+      interface: "PCIe 3.0 x4",
+      readSpeed: "3500 MB/s",
+      writeSpeed: "3300 MB/s"
     }
   },
   {
     id: "CMP004",
-    name: "Dell PowerEdge R740",
-    description: "2U rack server for enterprise applications",
-    type: "Server",
-    status: "Active",
-    location: "Server Room A",
-    purchaseDate: "2023-05-10",
-    warrantyExpiration: "2028-05-10",
+    name: "ASUS ROG Strix B550-F",
+    type: "Motherboard",
+    subtype: "ATX",
+    serialNumber: "ASB55023453",
+    manufacturer: "Asus",
+    model: "ROG Strix B550-F Gaming",
     specifications: {
-      cpu: "Intel Xeon Gold",
-      ram: "64GB",
-      storage: "2TB HDD"
+      chipset: "AMD B550",
+      socket: "AM4",
+      memorySlots: "4",
+      maxMemory: "128GB"
     }
   }
 ];
@@ -104,46 +129,127 @@ const MOCK_COMPONENTS = [
 // Component icons based on type
 const getComponentIcon = (type: string) => {
   switch (type) {
-    case "Server":
-      return <Server className="h-5 w-5" />;
-    case "Laptop":
-    case "Tablet":
-    case "Desktop":
-      return <Component className="h-5 w-5" />;
+    case "Processor":
+      return <Cpu className="h-5 w-5" />;
+    case "Motherboard":
+      return <HardDrive className="h-5 w-5" />;
+    case "RAM":
+      return <MemoryStick className="h-5 w-5" />;
+    case "Storage":
+      return <HardDrive className="h-5 w-5" />;
+    case "PSU":
+      return <Power className="h-5 w-5" />;
+    case "Monitor":
+      return <Monitor className="h-5 w-5" />;
+    case "Case":
+      return <Box className="h-5 w-5" />;
+    case "Peripherals":
+      return <Keyboard className="h-5 w-5" />;
+    case "Networking":
+      return <Router className="h-5 w-5" />;
     default:
       return <HardDrive className="h-5 w-5" />;
   }
 };
 
 const Components: React.FC = () => {
-  const [components, setComponents] = useState(MOCK_COMPONENTS);
+  const [components, setComponents] = useState<Component[]>(MOCK_COMPONENTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [formOpen, setFormOpen] = useState(false);
-  const [currentcomponent, setCurrentcomponent] = useState<any | null>(null);
+  const [currentComponent, setCurrentComponent] = useState<Component | null>(null);
+  const [selectedType, setSelectedType] = useState<string>(COMPONENT_TYPES[0]);
+  const { toast } = useToast();
+
+  const form = useForm<Component>({
+    defaultValues: {
+      id: "",
+      name: "",
+      type: COMPONENT_TYPES[0],
+      subtype: COMPONENT_SUBTYPES[COMPONENT_TYPES[0]][0],
+      serialNumber: "",
+      manufacturer: "",
+      model: "",
+      specifications: {}
+    }
+  });
 
   // Filter components based on search
-  const filteredcomponents = components.filter(component => 
+  const filteredComponents = components.filter(component => 
     component.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    component.description.toLowerCase().includes(searchQuery.toLowerCase())
+    component.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    component.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    component.model?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddEdit = (component: any = null) => {
-    setCurrentcomponent(component);
+  const handleAddEdit = (component: Component | null = null) => {
+    if (component) {
+      // If we're editing, set form values
+      setCurrentComponent(component);
+      form.reset({
+        id: component.id,
+        name: component.name,
+        type: component.type,
+        subtype: component.subtype || "",
+        serialNumber: component.serialNumber || "",
+        manufacturer: component.manufacturer || "",
+        model: component.model || "",
+        specifications: component.specifications || {}
+      });
+      setSelectedType(component.type);
+    } else {
+      // If we're adding, reset form values
+      setCurrentComponent(null);
+      form.reset({
+        id: `CMP${String(components.length + 1).padStart(3, '0')}`,
+        name: "",
+        type: COMPONENT_TYPES[0],
+        subtype: COMPONENT_SUBTYPES[COMPONENT_TYPES[0]][0],
+        serialNumber: "",
+        manufacturer: "",
+        model: "",
+        specifications: {}
+      });
+      setSelectedType(COMPONENT_TYPES[0]);
+    }
     setFormOpen(true);
   };
 
-  const handleSavecomponent = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, you would save the component to your backend
-    // For now, just close the dialog
+  const handleSaveComponent = (values: Component) => {
+    if (currentComponent) {
+      // Update existing component
+      setComponents(prevComponents => 
+        prevComponents.map(c => c.id === currentComponent.id ? values : c)
+      );
+      toast({
+        title: "Component updated",
+        description: `${values.name} has been updated successfully.`
+      });
+    } else {
+      // Add new component
+      setComponents(prevComponents => [...prevComponents, values]);
+      toast({
+        title: "Component added",
+        description: `${values.name} has been added to the components.`
+      });
+    }
     setFormOpen(false);
-    setCurrentcomponent(null);
   };
 
-  const handleDeletecomponent = (id: string) => {
-    // In a real app, you would delete from your backend
-    setComponents(components.filter(component => component.id !== id));
+  const handleDeleteComponent = (id: string) => {
+    setComponents(prevComponents => prevComponents.filter(c => c.id !== id));
+    toast({
+      title: "Component deleted",
+      description: "The component has been removed.",
+      variant: "destructive"
+    });
+  };
+
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    // Reset subtype when type changes
+    form.setValue("type", type);
+    form.setValue("subtype", COMPONENT_SUBTYPES[type][0]);
   };
 
   return (
@@ -196,11 +302,11 @@ const Components: React.FC = () => {
       {/* Components Grid/List View */}
       {viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredcomponents.map((component) => (
+          {filteredComponents.map((component) => (
             <Card key={component.id} className="flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle>{component.name}</CardTitle>
+                  <CardTitle className="mr-2">{component.name}</CardTitle>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -212,7 +318,7 @@ const Components: React.FC = () => {
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeletecomponent(component.id)}>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteComponent(component.id)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -220,32 +326,46 @@ const Components: React.FC = () => {
                   </DropdownMenu>
                 </div>
                 <div className="flex items-center mt-1">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                    {component.status}
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                    {component.type}
                   </span>
+                  {component.subtype && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 ml-2">
+                      {component.subtype}
+                    </span>
+                  )}
                 </div>
-                <CardDescription className="pt-1">{component.description}</CardDescription>
+                {component.manufacturer && (
+                  <CardDescription className="pt-1">{component.manufacturer} {component.model}</CardDescription>
+                )}
               </CardHeader>
               <CardContent className="flex-1">
                 <div className="text-sm">
-                  <div className="font-medium mb-2">Type: {component.type}</div>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2">
-                      {getComponentIcon(component.type)}
-                      <span className="truncate">{component.name}</span>
-                    </li>
-                  </ul>
+                  <div className="flex items-center mb-2">
+                    {getComponentIcon(component.type)}
+                    <span className="font-medium ml-2 truncate">{component.serialNumber ? `SN: ${component.serialNumber}` : "No Serial Number"}</span>
+                  </div>
+                  {component.specifications && Object.keys(component.specifications).length > 0 && (
+                    <div className="space-y-1 mt-3 bg-muted p-2 rounded-md">
+                      {Object.entries(component.specifications).map(([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                          <span className="text-xs text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                          <span className="text-xs font-medium">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="text-xs text-muted-foreground border-t pt-3">
                 <div className="w-full flex justify-between">
-                  <span>Location: {component.location}</span>
-                  <span>Warranty Expiration: {component.warrantyExpiration}</span>
+                  <span>ID: {component.id}</span>
+                  {component.manufacturer && <span>Mfr: {component.manufacturer}</span>}
                 </div>
               </CardFooter>
             </Card>
           ))}
-          {filteredcomponents.length === 0 && (
+          {filteredComponents.length === 0 && (
             <div className="col-span-full text-center py-10">
               <p className="text-muted-foreground">No components found.</p>
             </div>
@@ -258,27 +378,23 @@ const Components: React.FC = () => {
               <tr className="border-b">
                 <th className="text-left p-3 font-medium">Name</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">Type</th>
-                <th className="text-left p-3 font-medium hidden md:table-cell">Status</th>
-                <th className="text-left p-3 font-medium hidden lg:table-cell">Location</th>
-                <th className="text-left p-3 font-medium hidden lg:table-cell">Warranty Expiration</th>
+                <th className="text-left p-3 font-medium hidden md:table-cell">Subtype</th>
+                <th className="text-left p-3 font-medium hidden lg:table-cell">Manufacturer</th>
+                <th className="text-left p-3 font-medium hidden lg:table-cell">Serial Number</th>
                 <th className="p-3 w-[60px]"></th>
               </tr>
             </thead>
             <tbody>
-              {filteredcomponents.map((component) => (
+              {filteredComponents.map((component) => (
                 <tr key={component.id} className="border-b">
                   <td className="p-3">
                     <div className="font-medium">{component.name}</div>
-                    <div className="text-xs text-muted-foreground">{component.description}</div>
+                    <div className="text-xs text-muted-foreground">{component.model}</div>
                   </td>
                   <td className="p-3 hidden md:table-cell">{component.type}</td>
-                  <td className="p-3 hidden md:table-cell">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                      {component.status}
-                    </span>
-                  </td>
-                  <td className="p-3 hidden lg:table-cell">{component.location}</td>
-                  <td className="p-3 hidden lg:table-cell">{component.warrantyExpiration}</td>
+                  <td className="p-3 hidden md:table-cell">{component.subtype || "-"}</td>
+                  <td className="p-3 hidden lg:table-cell">{component.manufacturer || "-"}</td>
+                  <td className="p-3 hidden lg:table-cell">{component.serialNumber || "-"}</td>
                   <td className="p-3">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -291,7 +407,7 @@ const Components: React.FC = () => {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeletecomponent(component.id)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteComponent(component.id)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
@@ -300,7 +416,7 @@ const Components: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {filteredcomponents.length === 0 && (
+              {filteredComponents.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center p-6">
                     No components found.
@@ -312,104 +428,407 @@ const Components: React.FC = () => {
         </div>
       )}
 
-      {/* Add/Edit component Form Dialog */}
+      {/* Add/Edit Component Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{currentcomponent ? "Edit Component" : "Create New Component"}</DialogTitle>
+            <DialogTitle>{currentComponent ? "Edit Component" : "Create New Component"}</DialogTitle>
             <DialogDescription>
-              {currentcomponent 
+              {currentComponent 
                 ? "Update the details of the selected component." 
                 : "Enter the details of the new component."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSavecomponent}>
-            <Tabs defaultValue="details">
-              <TabsList className="grid w-full grid-cols-1">
-                <TabsTrigger value="details">Details</TabsTrigger>
-              </TabsList>
-              <TabsContent value="details" className="space-y-4 pt-4">
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Component Name</Label>
-                    <Input 
-                      id="name" 
-                      defaultValue={currentcomponent?.name || ""} 
-                      placeholder="Enter component name" 
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSaveComponent)} className="space-y-4">
+              <Tabs defaultValue="basic">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="basic">Basic Details</TabsTrigger>
+                  <TabsTrigger value="specifications">Specifications</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="basic" className="space-y-4 pt-4">
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Component ID</FormLabel>
+                            <FormControl>
+                              <Input {...field} readOnly />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Component Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Enter component name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Type</FormLabel>
+                            <Select 
+                              value={field.value} 
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                handleTypeChange(value);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {COMPONENT_TYPES.map((type) => (
+                                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="subtype"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Subtype</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select subtype" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {selectedType && COMPONENT_SUBTYPES[selectedType]?.map((subtype) => (
+                                  <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="manufacturer"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Manufacturer</FormLabel>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select manufacturer" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {MANUFACTURERS.map((manufacturer) => (
+                                  <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="model"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Model</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Component model" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="serialNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Serial Number</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Serial number" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea 
-                      id="description" 
-                      defaultValue={currentcomponent?.description || ""} 
-                      placeholder="Describe the component and its purpose" 
-                    />
+                </TabsContent>
+                
+                <TabsContent value="specifications" className="space-y-4 pt-4">
+                  <div className="bg-muted p-4 rounded-lg">
+                    <h3 className="text-sm font-medium mb-3">Add Specifications</h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Add key specifications for this component. These will vary based on the component type.
+                    </p>
+                    
+                    {selectedType === "Processor" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="cores">Cores</Label>
+                          <Input 
+                            id="cores" 
+                            placeholder="Number of cores"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, cores: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.cores || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="threads">Threads</Label>
+                          <Input 
+                            id="threads" 
+                            placeholder="Number of threads"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, threads: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.threads || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="baseFrequency">Base Frequency</Label>
+                          <Input 
+                            id="baseFrequency" 
+                            placeholder="e.g. 3.6 GHz"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, baseFrequency: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.baseFrequency || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="turboFrequency">Turbo Frequency</Label>
+                          <Input 
+                            id="turboFrequency" 
+                            placeholder="e.g. 5.0 GHz"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, turboFrequency: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.turboFrequency || ""}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedType === "Motherboard" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="chipset">Chipset</Label>
+                          <Input 
+                            id="chipset" 
+                            placeholder="e.g. AMD B550"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, chipset: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.chipset || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="socket">Socket</Label>
+                          <Input 
+                            id="socket" 
+                            placeholder="e.g. AM4"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, socket: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.socket || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="memorySlots">Memory Slots</Label>
+                          <Input 
+                            id="memorySlots" 
+                            placeholder="Number of slots"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, memorySlots: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.memorySlots || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="maxMemory">Max Memory</Label>
+                          <Input 
+                            id="maxMemory" 
+                            placeholder="e.g. 128GB"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, maxMemory: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.maxMemory || ""}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedType === "RAM" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="capacity">Capacity</Label>
+                          <Input 
+                            id="capacity" 
+                            placeholder="e.g. 16GB"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, capacity: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.capacity || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="speed">Speed</Label>
+                          <Input 
+                            id="speed" 
+                            placeholder="e.g. 3200MHz"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, speed: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.speed || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="latency">Latency</Label>
+                          <Input 
+                            id="latency" 
+                            placeholder="e.g. CL16"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, latency: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.latency || ""}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedType === "Storage" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="capacity">Capacity</Label>
+                          <Input 
+                            id="capacity" 
+                            placeholder="e.g. 1TB"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, capacity: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.capacity || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="interface">Interface</Label>
+                          <Input 
+                            id="interface" 
+                            placeholder="e.g. SATA III, PCIe 3.0"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, interface: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.interface || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="readSpeed">Read Speed</Label>
+                          <Input 
+                            id="readSpeed" 
+                            placeholder="e.g. 3500 MB/s"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, readSpeed: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.readSpeed || ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="writeSpeed">Write Speed</Label>
+                          <Input 
+                            id="writeSpeed" 
+                            placeholder="e.g. 3300 MB/s"
+                            onChange={(e) => {
+                              const specs = form.getValues().specifications || {};
+                              form.setValue("specifications", { ...specs, writeSpeed: e.target.value });
+                            }}
+                            defaultValue={form.getValues().specifications?.writeSpeed || ""}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Add more type-specific fields as needed */}
+                    {!["Processor", "Motherboard", "RAM", "Storage"].includes(selectedType) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2 col-span-2">
+                          <Label htmlFor="customSpec">Add Custom Specifications</Label>
+                          <Textarea 
+                            id="customSpec" 
+                            placeholder="Enter specifications in key:value format, one per line (e.g. Size: 27 inches)"
+                            onChange={(e) => {
+                              const specs: Record<string, string> = {};
+                              e.target.value.split('\n').forEach(line => {
+                                const [key, value] = line.split(':');
+                                if (key && value) {
+                                  specs[key.trim()] = value.trim();
+                                }
+                              });
+                              form.setValue("specifications", specs);
+                            }}
+                            defaultValue={Object.entries(form.getValues().specifications || {})
+                              .map(([key, value]) => `${key}: ${value}`)
+                              .join('\n')}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="type">Type</Label>
-                      <select 
-                        id="type" 
-                        defaultValue={currentcomponent?.type || "Laptop"} 
-                        className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
-                      >
-                        <option value="Laptop">Laptop</option>
-                        <option value="Server">Server</option>
-                        <option value="Networking">Networking</option>
-                        <option value="Printer">Printer</option>
-                      </select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="status">Status</Label>
-                      <select 
-                        id="status" 
-                        defaultValue={currentcomponent?.status || "Active"} 
-                        className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Decommissioned">Decommissioned</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input 
-                        id="location" 
-                        defaultValue={currentcomponent?.location || ""} 
-                        placeholder="Location" 
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="purchaseDate">Purchase Date</Label>
-                      <Input 
-                        id="purchaseDate" 
-                        type="date" 
-                        defaultValue={currentcomponent?.purchaseDate || ""} 
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="warrantyExpiration">Warranty Expiration</Label>
-                      <Input 
-                        id="warrantyExpiration" 
-                        type="date" 
-                        defaultValue={currentcomponent?.warrantyExpiration || ""} 
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-            <DialogFooter className="mt-6">
-              <Button type="submit">
-                {currentcomponent ? "Update Component" : "Create Component"}
-              </Button>
-            </DialogFooter>
-          </form>
+                </TabsContent>
+              </Tabs>
+              
+              <DialogFooter>
+                <Button type="submit">
+                  {currentComponent ? "Update Component" : "Create Component"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
