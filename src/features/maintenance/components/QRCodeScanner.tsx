@@ -18,53 +18,46 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const qrContainerRef = useRef<HTMLDivElement | null>(null);
   const { toast } = useToast();
   const qrReaderId = "qr-reader-container";
   
-  // Clean up on unmount
+  // Clean up on unmount - make sure scanner is fully stopped
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
-        try {
-          if (scannerRef.current.isScanning) {
-            scannerRef.current.stop().catch(err => {
-              console.error('Error stopping scanner during cleanup:', err);
-            });
-          }
-        } catch (err) {
-          console.error('Error during scanner cleanup:', err);
-        }
-        scannerRef.current = null;
-      }
+      stopScanningAndCleanup();
     };
   }, []);
 
-  // Initialize scanner only when starting scan
+  const stopScanningAndCleanup = () => {
+    if (scannerRef.current) {
+      try {
+        if (scannerRef.current.isScanning) {
+          scannerRef.current.stop().catch(err => {
+            console.error('Error stopping scanner during cleanup:', err);
+          });
+        }
+      } catch (err) {
+        console.error('Error during scanner cleanup:', err);
+      }
+      scannerRef.current = null;
+    }
+  };
+
   const initializeScanner = () => {
     try {
-      // Clear any previous instance to avoid DOM conflicts
-      if (scannerRef.current) {
-        try {
-          if (scannerRef.current.isScanning) {
-            scannerRef.current.stop().catch(err => {
-              console.error('Error stopping previous scanner instance:', err);
-            });
-          }
-        } catch (err) {
-          console.error('Error checking scanner status:', err);
-        }
-        scannerRef.current = null;
-      }
+      // First clean up any existing instance
+      stopScanningAndCleanup();
       
-      const qrReaderElement = document.getElementById(qrReaderId);
-      if (!qrReaderElement) {
-        console.error('QR reader element not found');
+      if (!qrContainerRef.current) {
+        console.error('QR container ref not found');
         return false;
       }
       
-      // Clear any previous content
-      while (qrReaderElement.firstChild) {
-        qrReaderElement.removeChild(qrReaderElement.firstChild);
+      // Make sure container is empty before initializing new scanner
+      // Using the ref for direct DOM manipulation to avoid React conflicts
+      while (qrContainerRef.current.firstChild) {
+        qrContainerRef.current.removeChild(qrContainerRef.current.firstChild);
       }
       
       // Create new scanner instance
@@ -183,6 +176,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       
       <div 
         id={qrReaderId}
+        ref={qrContainerRef}
         className="w-full max-w-[300px] h-[300px] bg-gray-100 relative rounded overflow-hidden"
       >
         {!scanning && (
