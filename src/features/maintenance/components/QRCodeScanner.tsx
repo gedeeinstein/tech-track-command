@@ -4,6 +4,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { ScanLine, ScanSearch, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface QRCodeScannerProps {
   onScanSuccess: (decodedData: string) => void;
@@ -17,17 +18,36 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerDivRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const qrReaderId = "qr-reader-container";
 
+  // Completely stop and clean up the scanner
+  const cleanupScanner = () => {
+    if (scannerRef.current) {
+      if (scannerRef.current.isScanning) {
+        scannerRef.current.stop()
+          .then(() => {
+            console.log('Scanner stopped successfully');
+            scannerRef.current = null;
+          })
+          .catch(err => {
+            console.error('Error stopping scanner:', err);
+            scannerRef.current = null;
+          });
+      } else {
+        scannerRef.current = null;
+      }
+    }
+  };
+
+  // Clean up on unmount
   useEffect(() => {
-    // Cleanup on unmount
     return () => {
-      stopScanner();
+      cleanupScanner();
     };
   }, []);
 
-  // Initialize scanner only when starting
+  // Initialize scanner only when starting scan
   const initializeScanner = () => {
     try {
       if (scannerRef.current) {
@@ -35,32 +55,20 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
         return true;
       }
       
-      if (!document.getElementById('qr-reader')) {
+      const qrReaderElement = document.getElementById(qrReaderId);
+      if (!qrReaderElement) {
         console.error('QR reader element not found');
         return false;
       }
       
-      scannerRef.current = new Html5Qrcode('qr-reader');
+      // Clear any previous content
+      qrReaderElement.innerHTML = '';
+      scannerRef.current = new Html5Qrcode(qrReaderId);
       return true;
     } catch (err) {
       console.error('Error initializing scanner:', err);
       setError('Failed to initialize camera');
       return false;
-    }
-  };
-
-  // Safely stop the scanner
-  const stopScanner = () => {
-    if (scannerRef.current && scannerRef.current.isScanning) {
-      scannerRef.current.stop()
-        .then(() => {
-          console.log('Scanner stopped successfully');
-          setScanning(false);
-        })
-        .catch(err => {
-          console.error('Error stopping scanner:', err);
-          // Continue despite error - we're cleaning up
-        });
     }
   };
 
@@ -105,34 +113,65 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   };
 
   const stopScanning = () => {
-    stopScanner();
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      scannerRef.current.stop()
+        .then(() => {
+          console.log('Scanner stopped successfully');
+          setScanning(false);
+        })
+        .catch(err => {
+          console.error('Error stopping scanner:', err);
+          setScanning(false);
+        });
+    }
   };
 
   const handleScanSuccess = (decodedText: string) => {
-    stopScanner();
-    try {
-      // Validate that it's a valid QR code with our expected format
-      JSON.parse(decodedText);
-      onScanSuccess(decodedText);
-    } catch (e) {
-      setError("Invalid QR code format");
-      // Restart scanning if the QR code wasn't valid
-      startScanning();
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      scannerRef.current.stop()
+        .then(() => {
+          try {
+            // Validate that it's a valid QR code with our expected format
+            JSON.parse(decodedText);
+            onScanSuccess(decodedText);
+          } catch (e) {
+            setError("Invalid QR code format");
+            // Restart scanning if the QR code wasn't valid
+            setTimeout(() => {
+              if (scannerRef.current) startScanning();
+            }, 500);
+          }
+        })
+        .catch(err => {
+          console.error('Error stopping scanner after success:', err);
+          // Still try to process the result
+          try {
+            JSON.parse(decodedText);
+            onScanSuccess(decodedText);
+          } catch (e) {
+            setError("Invalid QR code format");
+          }
+        });
     }
   };
 
   return (
     <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-lg">
+      <DialogTitle className="sr-only">Scan Asset QR Code</DialogTitle>
+      <DialogDescription className="sr-only">Scan a QR code to identify an asset</DialogDescription>
+      
       <div className="flex justify-between w-full mb-4">
         <h3 className="text-lg font-medium">Scan Asset QR Code</h3>
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={() => {
+          stopScanning();
+          onClose();
+        }}>
           <X className="h-4 w-4" />
         </Button>
       </div>
       
       <div 
-        id="qr-reader" 
-        ref={scannerDivRef}
+        id={qrReaderId}
         className="w-full max-w-[300px] h-[300px] bg-gray-100 relative rounded overflow-hidden"
       >
         {!scanning && (

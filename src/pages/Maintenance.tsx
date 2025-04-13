@@ -269,6 +269,10 @@ const Maintenance: React.FC = () => {
     }
   };
 
+  const closeScanner = () => {
+    setScannerOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -699,10 +703,12 @@ const Maintenance: React.FC = () => {
 
       <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
         <DialogContent className="sm:max-w-[500px] p-0">
-          <QRCodeScanner 
-            onScanSuccess={handleScanSuccess} 
-            onClose={() => setScannerOpen(false)} 
-          />
+          {scannerOpen && (
+            <QRCodeScanner 
+              onScanSuccess={handleScanSuccess} 
+              onClose={closeScanner} 
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
