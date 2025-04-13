@@ -59,7 +59,7 @@ const AssetQRCode: React.FC<AssetQRCodeProps> = ({
         <body>
           <div class="qr-container">
             <div>
-              ${new QRCodeSVG({ value: qrCodeData, size: 200 }).toString()}
+              ${QRCodeSVG({ value: qrCodeData, size: 200 }).toString()}
             </div>
             <div class="asset-details">
               <h3>${assetName}</h3>
