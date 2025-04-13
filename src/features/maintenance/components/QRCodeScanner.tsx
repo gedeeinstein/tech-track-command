@@ -20,39 +20,40 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const { toast } = useToast();
   const qrReaderId = "qr-reader-container";
-
-  // Completely stop and clean up the scanner
-  const cleanupScanner = () => {
-    if (scannerRef.current) {
-      if (scannerRef.current.isScanning) {
-        scannerRef.current.stop()
-          .then(() => {
-            console.log('Scanner stopped successfully');
-            scannerRef.current = null;
-          })
-          .catch(err => {
-            console.error('Error stopping scanner:', err);
-            scannerRef.current = null;
-          });
-      } else {
-        scannerRef.current = null;
-      }
-    }
-  };
-
+  
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      cleanupScanner();
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.stop().catch(err => {
+              console.error('Error stopping scanner during cleanup:', err);
+            });
+          }
+        } catch (err) {
+          console.error('Error during scanner cleanup:', err);
+        }
+        scannerRef.current = null;
+      }
     };
   }, []);
 
   // Initialize scanner only when starting scan
   const initializeScanner = () => {
     try {
+      // Clear any previous instance to avoid DOM conflicts
       if (scannerRef.current) {
-        // Already initialized
-        return true;
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.stop().catch(err => {
+              console.error('Error stopping previous scanner instance:', err);
+            });
+          }
+        } catch (err) {
+          console.error('Error checking scanner status:', err);
+        }
+        scannerRef.current = null;
       }
       
       const qrReaderElement = document.getElementById(qrReaderId);
@@ -62,7 +63,11 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       }
       
       // Clear any previous content
-      qrReaderElement.innerHTML = '';
+      while (qrReaderElement.firstChild) {
+        qrReaderElement.removeChild(qrReaderElement.firstChild);
+      }
+      
+      // Create new scanner instance
       scannerRef.current = new Html5Qrcode(qrReaderId);
       return true;
     } catch (err) {
@@ -123,36 +128,45 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
           console.error('Error stopping scanner:', err);
           setScanning(false);
         });
+    } else {
+      setScanning(false);
     }
   };
 
   const handleScanSuccess = (decodedText: string) => {
+    // First stop scanning to release camera
     if (scannerRef.current && scannerRef.current.isScanning) {
       scannerRef.current.stop()
         .then(() => {
-          try {
-            // Validate that it's a valid QR code with our expected format
-            JSON.parse(decodedText);
-            onScanSuccess(decodedText);
-          } catch (e) {
-            setError("Invalid QR code format");
-            // Restart scanning if the QR code wasn't valid
-            setTimeout(() => {
-              if (scannerRef.current) startScanning();
-            }, 500);
-          }
+          processScannedData(decodedText);
         })
         .catch(err => {
           console.error('Error stopping scanner after success:', err);
           // Still try to process the result
-          try {
-            JSON.parse(decodedText);
-            onScanSuccess(decodedText);
-          } catch (e) {
-            setError("Invalid QR code format");
-          }
+          processScannedData(decodedText);
         });
+    } else {
+      processScannedData(decodedText);
     }
+  };
+
+  const processScannedData = (decodedText: string) => {
+    try {
+      // Validate that it's a valid QR code with our expected format
+      JSON.parse(decodedText);
+      onScanSuccess(decodedText);
+    } catch (e) {
+      setError("Invalid QR code format");
+      // Restart scanning if the QR code wasn't valid
+      setTimeout(() => {
+        if (scannerRef.current) startScanning();
+      }, 500);
+    }
+  };
+
+  const handleClose = () => {
+    stopScanning();
+    onClose();
   };
 
   return (
@@ -162,10 +176,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       
       <div className="flex justify-between w-full mb-4">
         <h3 className="text-lg font-medium">Scan Asset QR Code</h3>
-        <Button variant="ghost" size="icon" onClick={() => {
-          stopScanning();
-          onClose();
-        }}>
+        <Button variant="ghost" size="icon" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
