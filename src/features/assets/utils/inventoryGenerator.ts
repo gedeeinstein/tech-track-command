@@ -33,3 +33,18 @@ export const generateInventoryNumber = (
   // Generate the inventory number
   return `IT-FA/KPTM/${formattedAssetType}/${romanMonth}/${year}/${id.toString().padStart(3, '0')}`;
 };
+
+/**
+ * Creates a QR code data content for an asset
+ * The format includes the inventory number and asset ID
+ */
+export const generateQRCodeData = (
+  inventoryNumber: string,
+  assetId: string
+): string => {
+  return JSON.stringify({
+    inventoryNumber,
+    assetId,
+    timestamp: new Date().toISOString()
+  });
+};

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -45,10 +44,13 @@ import {
   PlayCircle,
   CheckCircle2,
   AlertCircle,
-  RotateCcw
+  RotateCcw,
+  ScanLine,
+  QrCode
 } from "lucide-react";
+import QRCodeScanner from "@/features/maintenance/components/QRCodeScanner";
+import { Asset } from "@/features/assemblies/types";
 
-// Mock maintenance tasks
 const MOCK_TASKS = [
   {
     id: "MT001",
@@ -136,7 +138,6 @@ const MOCK_TASKS = [
   }
 ];
 
-// Users for assignee dropdown
 const USERS = [
   { id: "U001", name: "John Smith" },
   { id: "U002", name: "Emma Wilson" },
@@ -144,7 +145,6 @@ const USERS = [
   { id: "U004", name: "Sarah Davis" }
 ];
 
-// Assets for selection dropdown
 const ASSETS = [
   { id: "A1001", name: "Dell XPS 15" },
   { id: "A1002", name: "Cisco Switch 24-Port" },
@@ -154,7 +154,6 @@ const ASSETS = [
   { id: "A2011", name: "UPS System" }
 ];
 
-// Assemblies for selection dropdown
 const ASSEMBLIES = [
   { id: "ASM001", name: "Server Rack #1" },
   { id: "ASM002", name: "Finance Workstations" },
@@ -162,13 +161,10 @@ const ASSEMBLIES = [
   { id: "ASM004", name: "Developer Workstation Pack" }
 ];
 
-// Task status options
 const STATUS_OPTIONS = ["All", "Scheduled", "In Progress", "Completed", "Overdue"];
 
-// Task priority options
 const PRIORITY_OPTIONS = ["All", "Low", "Medium", "High"];
 
-// Recurring options
 const RECURRING_OPTIONS = ["None", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly"];
 
 const getStatusIcon = (status: string) => {
@@ -194,8 +190,12 @@ const Maintenance: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<any | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannedAsset, setScannedAsset] = useState<{
+    assetId: string;
+    inventoryNumber: string;
+  } | null>(null);
 
-  // Filter tasks based on search, status, and priority
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = 
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -241,6 +241,34 @@ const Maintenance: React.FC = () => {
     ));
   };
 
+  const handleScanSuccess = (decodedData: string) => {
+    try {
+      const scannedData = JSON.parse(decodedData);
+      if (scannedData.assetId && scannedData.inventoryNumber) {
+        setScannedAsset({
+          assetId: scannedData.assetId,
+          inventoryNumber: scannedData.inventoryNumber
+        });
+        
+        // Find the asset in our mock data
+        const asset = ASSETS.find(a => a.id === scannedData.assetId);
+        
+        // Create a new maintenance task with this asset pre-selected
+        setCurrentTask({
+          asset: asset ? { id: asset.id, name: asset.name } : null
+        });
+        
+        // Close scanner and open form
+        setScannerOpen(false);
+        setFormOpen(true);
+      } else {
+        console.error("Invalid QR code format: missing required fields");
+      }
+    } catch (e) {
+      console.error("Error parsing QR code data:", e);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -250,13 +278,23 @@ const Maintenance: React.FC = () => {
             Schedule and track maintenance tasks for your IT assets
           </p>
         </div>
-        <Button size="sm" className="flex items-center gap-1" onClick={() => handleAddEdit()}>
-          <Plus size={16} />
-          <span>New Task</span>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => setScannerOpen(true)}
+          >
+            <ScanLine size={16} />
+            <span>Scan Asset</span>
+          </Button>
+          <Button size="sm" className="flex items-center gap-1" onClick={() => handleAddEdit()}>
+            <Plus size={16} />
+            <span>New Task</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -325,7 +363,6 @@ const Maintenance: React.FC = () => {
         </div>
       </div>
 
-      {/* Tasks Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -475,15 +512,16 @@ const Maintenance: React.FC = () => {
         </Table>
       </div>
 
-      {/* Add/Edit Task Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{currentTask ? "Edit Maintenance Task" : "Create New Maintenance Task"}</DialogTitle>
+            <DialogTitle>{currentTask ? (currentTask.id ? "Edit Maintenance Task" : "Create Maintenance Task") : "Create New Maintenance Task"}</DialogTitle>
             <DialogDescription>
-              {currentTask 
-                ? "Update the details of the selected maintenance task." 
-                : "Schedule a new maintenance task for an asset or assembly."}
+              {scannedAsset 
+                ? `Creating maintenance task for asset with ID: ${scannedAsset.inventoryNumber}`
+                : currentTask?.id 
+                  ? "Update the details of the selected maintenance task." 
+                  : "Schedule a new maintenance task for an asset or assembly."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSaveTask}>
@@ -555,14 +593,20 @@ const Maintenance: React.FC = () => {
                       <Label htmlFor="asset">Asset (Optional)</Label>
                       <select 
                         id="asset" 
-                        defaultValue={currentTask?.asset?.id || ""} 
+                        defaultValue={currentTask?.asset?.id || scannedAsset?.assetId || ""} 
                         className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
+                        disabled={!!scannedAsset}
                       >
                         <option value="">None</option>
                         {ASSETS.map(asset => (
                           <option key={asset.id} value={asset.id}>{asset.name}</option>
                         ))}
                       </select>
+                      {scannedAsset && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Asset selected from QR code scan
+                        </div>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="assembly">Assembly (Optional)</Label>
@@ -646,10 +690,19 @@ const Maintenance: React.FC = () => {
             </Tabs>
             <DialogFooter className="mt-6">
               <Button type="submit">
-                {currentTask ? "Update Task" : "Create Task"}
+                {currentTask?.id ? "Update Task" : "Create Task"}
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
+        <DialogContent className="sm:max-w-[500px] p-0">
+          <QRCodeScanner 
+            onScanSuccess={handleScanSuccess} 
+            onClose={() => setScannerOpen(false)} 
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Table, 
@@ -56,14 +55,15 @@ import {
   HardDrive,
   Monitor,
   Keyboard,
-  Users
+  Users,
+  QrCode
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 import { Asset, OPERATING_SYSTEMS, DIVISIONS, COMPONENT_TYPES } from "@/features/assemblies/types";
 import { generateInventoryNumber } from "@/features/assets/utils/inventoryGenerator";
+import AssetQRCode from "@/features/assets/components/AssetQRCode";
 
-// Mock data for assets - updated with new fields
 const MOCK_ASSETS: Asset[] = [
   {
     id: "A1001",
@@ -77,11 +77,11 @@ const MOCK_ASSETS: Asset[] = [
     warranty: "2025-05-15",
     operatingSystem: "Windows 11 Pro",
     user: "jsmith",
-    processor: "CMP001", // Reference to component ID
+    processor: "CMP001",
     motherboard: "CMP002",
     ram: "CMP003",
     storage: "CMP004",
-    monitor: "N/A", // Built-in
+    monitor: "N/A",
     peripherals: ["CMP005", "CMP006"],
     expansionCards: [],
     accessories: ["CMP007"],
@@ -178,7 +178,6 @@ const MOCK_ASSETS: Asset[] = [
   }
 ];
 
-// Mock data for components
 const MOCK_COMPONENTS = [
   {
     id: "CMP001",
@@ -282,7 +281,6 @@ const MOCK_COMPONENTS = [
   }
 ];
 
-// Asset types for dropdown - updated with more specific types
 const ASSET_TYPES = [
   "All Types",
   "Desktop",
@@ -296,7 +294,6 @@ const ASSET_TYPES = [
   "Other"
 ];
 
-// Asset statuses for dropdown
 const ASSET_STATUSES = [
   "All Statuses",
   "Active",
@@ -338,7 +335,6 @@ const Assets: React.FC = () => {
     }
   });
 
-  // Update form values when currentAsset changes
   useEffect(() => {
     if (currentAsset) {
       form.reset({
@@ -389,7 +385,6 @@ const Assets: React.FC = () => {
     }
   }, [currentAsset, form]);
 
-  // Filter assets based on search, type, and status
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          asset.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -407,13 +402,11 @@ const Assets: React.FC = () => {
 
   const onSubmit = (data: any) => {
     if (currentAsset) {
-      // Update existing asset
       setAssets(assets.map(a => a.id === currentAsset.id ? {
         ...a,
         ...data
       } : a));
     } else {
-      // Create new asset
       const newId = `A${Math.floor(1000 + Math.random() * 9000)}`;
       const newAsset: Asset = {
         id: newId,
@@ -431,13 +424,11 @@ const Assets: React.FC = () => {
     setAssets(assets.filter(asset => asset.id !== id));
   };
 
-  // Helper function to get component name by id
   const getComponentNameById = (id: string) => {
     const component = components.find(c => c.id === id);
     return component ? component.name : "Not Specified";
   };
 
-  // Filter components by type
   const getComponentsByType = (type: string) => {
     return components.filter(component => component.type === type);
   };
@@ -475,7 +466,6 @@ const Assets: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -516,7 +506,6 @@ const Assets: React.FC = () => {
         </Select>
       </div>
 
-      {/* Assets Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -529,7 +518,7 @@ const Assets: React.FC = () => {
               <TableHead className="hidden md:table-cell">Assigned To</TableHead>
               <TableHead className="hidden lg:table-cell">Purchase Date</TableHead>
               <TableHead className="hidden lg:table-cell">Warranty</TableHead>
-              <TableHead className="w-[60px]"></TableHead>
+              <TableHead className="w-[90px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -554,24 +543,31 @@ const Assets: React.FC = () => {
                   <TableCell className="hidden lg:table-cell">{asset.purchaseDate}</TableCell>
                   <TableCell className="hidden lg:table-cell">{asset.warranty}</TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleAddEdit(asset)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteAsset(asset.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-end">
+                      <AssetQRCode 
+                        inventoryNumber={asset.inventoryNumber || ""}
+                        assetId={asset.id}
+                        assetName={asset.name}
+                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleAddEdit(asset)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteAsset(asset.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -586,7 +582,6 @@ const Assets: React.FC = () => {
         </Table>
       </div>
 
-      {/* Add/Edit Asset Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -600,454 +595,433 @@ const Assets: React.FC = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Basic Info Section */}
-                <div className="space-y-4 md:col-span-2">
-                  <h3 className="font-semibold text-sm border-b pb-1">Basic Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Asset Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Enter asset name" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Asset Type</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {ASSET_TYPES.filter(type => type !== "All Types").map((type) => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {ASSET_STATUSES.filter(status => status !== "All Statuses").map((status) => (
-                                <SelectItem key={status} value={status}>{status}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="division"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Division</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select division" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {DIVISIONS.map((division) => (
-                                <SelectItem key={division} value={division}>{division}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Physical location" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="assignedTo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Assigned To</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Person or team" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="purchaseDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Purchase Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="warranty"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Warranty Until</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* OS and User Section */}
-                <div className="space-y-4 md:col-span-2">
-                  <h3 className="font-semibold text-sm border-b pb-1">Operating System & User</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="operatingSystem"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Operating System</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select OS" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {OPERATING_SYSTEMS.map((os) => (
-                                <SelectItem key={os} value={os}>{os}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="user"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>User</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Username" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="windowsLicense"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Windows License</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="License key" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="hostname"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hostname</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Computer name" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Hardware Components Section */}
-                <div className="space-y-4 md:col-span-2">
-                  <h3 className="font-semibold text-sm border-b pb-1">Hardware Components</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="processor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            <div className="flex items-center gap-1">
-                              <Cpu className="h-4 w-4" />
-                              <span>Processor</span>
-                            </div>
-                          </FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select processor" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getComponentsByType("Processor").map((component) => (
-                                <SelectItem key={component.id} value={component.id}>
-                                  {component.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="motherboard"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            <div className="flex items-center gap-1">
-                              <Server className="h-4 w-4" />
-                              <span>Motherboard</span>
-                            </div>
-                          </FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select motherboard" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getComponentsByType("Motherboard").map((component) => (
-                                <SelectItem key={component.id} value={component.id}>
-                                  {component.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="ram"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            <div className="flex items-center gap-1">
-                              <HardDrive className="h-4 w-4" />
-                              <span>RAM</span>
-                            </div>
-                          </FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select RAM" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getComponentsByType("RAM").map((component) => (
-                                <SelectItem key={component.id} value={component.id}>
-                                  {component.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="storage"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            <div className="flex items-center gap-1">
-                              <HardDrive className="h-4 w-4" />
-                              <span>Storage</span>
-                            </div>
-                          </FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select storage" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getComponentsByType("Storage").map((component) => (
-                                <SelectItem key={component.id} value={component.id}>
-                                  {component.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="monitor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            <div className="flex items-center gap-1">
-                              <Monitor className="h-4 w-4" />
-                              <span>Monitor</span>
-                            </div>
-                          </FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select monitor" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getComponentsByType("Monitor").map((component) => (
-                                <SelectItem key={component.id} value={component.id}>
-                                  {component.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="peripherals"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            <div className="flex items-center gap-1">
-                              <Keyboard className="h-4 w-4" />
-                              <span>Peripherals</span>
-                            </div>
-                          </FormLabel>
-                          <Select
-                            onValueChange={(value) => field.onChange([...field.value, value])}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Add peripheral" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getComponentsByType("Peripherals").map((component) => (
-                                <SelectItem key={component.id} value={component.id}>
-                                  {component.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {field.value && field.value.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {field.value.map((id) => (
-                                <div key={id} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs flex items-center gap-1">
-                                  {getComponentNameById(id)}
-                                  <button
-                                    type="button"
-                                    onClick={() => field.onChange(field.value.filter((v) => v !== id))}
-                                    className="ml-1 hover:bg-destructive/10 rounded-full p-1"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Asset Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter asset name" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Asset Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ASSET_TYPES.filter(type => type !== "All Types").map((type) => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <DialogFooter>
-                <Button type="submit">
-                  {currentAsset ? "Update Asset" : "Create Asset"}
-                </Button>
-              </DialogFooter>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ASSET_STATUSES.filter(status => status !== "All Statuses").map((status) => (
+                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="division"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Division</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select division" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {DIVISIONS.map((division) => (
+                            <SelectItem key={division} value={division}>{division}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Physical location" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="assignedTo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assigned To</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Person or team" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="purchaseDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="warranty"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Warranty Until</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="operatingSystem"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Operating System</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select OS" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {OPERATING_SYSTEMS.map((os) => (
+                            <SelectItem key={os} value={os}>{os}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="user"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>User</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Username" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="windowsLicense"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Windows License</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="License key" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="hostname"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hostname</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Computer name" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="processor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <div className="flex items-center gap-1">
+                          <Cpu className="h-4 w-4" />
+                          <span>Processor</span>
+                        </div>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select processor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {getComponentsByType("Processor").map((component) => (
+                            <SelectItem key={component.id} value={component.id}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="motherboard"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <div className="flex items-center gap-1">
+                          <Server className="h-4 w-4" />
+                          <span>Motherboard</span>
+                        </div>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select motherboard" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {getComponentsByType("Motherboard").map((component) => (
+                            <SelectItem key={component.id} value={component.id}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="ram"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <div className="flex items-center gap-1">
+                          <HardDrive className="h-4 w-4" />
+                          <span>RAM</span>
+                        </div>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select RAM" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {getComponentsByType("RAM").map((component) => (
+                            <SelectItem key={component.id} value={component.id}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="storage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <div className="flex items-center gap-1">
+                          <HardDrive className="h-4 w-4" />
+                          <span>Storage</span>
+                        </div>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select storage" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {getComponentsByType("Storage").map((component) => (
+                            <SelectItem key={component.id} value={component.id}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="monitor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <div className="flex items-center gap-1">
+                          <Monitor className="h-4 w-4" />
+                          <span>Monitor</span>
+                        </div>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select monitor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {getComponentsByType("Monitor").map((component) => (
+                            <SelectItem key={component.id} value={component.id}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="peripherals"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <div className="flex items-center gap-1">
+                          <Keyboard className="h-4 w-4" />
+                          <span>Peripherals</span>
+                        </div>
+                      </FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange([...field.value, value])}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Add peripheral" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {getComponentsByType("Peripherals").map((component) => (
+                            <SelectItem key={component.id} value={component.id}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {field.value && field.value.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {field.value.map((id) => (
+                            <div key={id} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                              {getComponentNameById(id)}
+                              <button
+                                type="button"
+                                onClick={() => field.onChange(field.value.filter((v) => v !== id))}
+                                className="ml-1 hover:bg-destructive/10 rounded-full p-1"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </FormItem>
+                  )}
+                />
+              </div>
             </form>
           </Form>
         </DialogContent>
