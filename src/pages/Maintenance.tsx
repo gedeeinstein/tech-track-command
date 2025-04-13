@@ -49,6 +49,7 @@ import {
   QrCode
 } from "lucide-react";
 import QRCodeScanner from "@/features/maintenance/components/QRCodeScanner";
+import { extractAssetInfo } from "@/features/maintenance/utils/qrScannerUtils";
 import { Asset } from "@/features/assemblies/types";
 
 const MOCK_TASKS = [
@@ -243,15 +244,13 @@ const Maintenance: React.FC = () => {
 
   const handleScanSuccess = (decodedData: string) => {
     try {
-      const scannedData = JSON.parse(decodedData);
-      if (scannedData.assetId && scannedData.inventoryNumber) {
-        setScannedAsset({
-          assetId: scannedData.assetId,
-          inventoryNumber: scannedData.inventoryNumber
-        });
+      const assetInfo = extractAssetInfo(decodedData);
+      
+      if (assetInfo) {
+        setScannedAsset(assetInfo);
         
         // Find the asset in our mock data
-        const asset = ASSETS.find(a => a.id === scannedData.assetId);
+        const asset = ASSETS.find(a => a.id === assetInfo.assetId);
         
         // Create a new maintenance task with this asset pre-selected
         setCurrentTask({
