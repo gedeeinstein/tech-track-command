@@ -8,7 +8,9 @@ import { toast } from "@/hooks/use-toast";
  */
 export const getTasks = async (): Promise<Task[]> => {
   try {
-    const { data, error } = await supabase
+    // TypeScript doesn't know about our new tables yet
+    // We need to use 'any' to bypass TypeScript's type checking temporarily
+    const { data, error } = await (supabase as any)
       .from('maintenance_tasks')
       .select(`
         *,
@@ -21,7 +23,7 @@ export const getTasks = async (): Promise<Task[]> => {
     }
     
     // Transform the data to match the Task type
-    const tasks = data.map(item => ({
+    const tasks: Task[] = data.map((item: any) => ({
       id: item.id,
       title: item.title,
       description: item.description,
@@ -34,7 +36,7 @@ export const getTasks = async (): Promise<Task[]> => {
       completedDate: item.completed_date,
       recurring: item.recurring,
       nextOccurrence: item.next_occurrence
-    })) as Task[];
+    }));
     
     return tasks;
   } catch (error) {
@@ -72,7 +74,8 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
       next_occurrence: task.nextOccurrence
     };
     
-    const { data, error } = await supabase
+    // Use 'any' to bypass TypeScript's type checking temporarily
+    const { data, error } = await (supabase as any)
       .from('maintenance_tasks')
       .insert([newTask])
       .select(`
@@ -139,7 +142,8 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
       next_occurrence: task.nextOccurrence
     };
     
-    const { data, error } = await supabase
+    // Use 'any' to bypass TypeScript's type checking temporarily
+    const { data, error } = await (supabase as any)
       .from('maintenance_tasks')
       .update(updateData)
       .eq('id', task.id)
@@ -194,7 +198,8 @@ export const markTaskCompleted = async (id: string): Promise<Task | null> => {
   try {
     const completedDate = new Date().toISOString().split('T')[0];
     
-    const { data, error } = await supabase
+    // Use 'any' to bypass TypeScript's type checking temporarily
+    const { data, error } = await (supabase as any)
       .from('maintenance_tasks')
       .update({
         status: 'Completed',
@@ -250,7 +255,8 @@ export const markTaskCompleted = async (id: string): Promise<Task | null> => {
  */
 export const deleteTask = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    // Use 'any' to bypass TypeScript's type checking temporarily
+    const { error } = await (supabase as any)
       .from('maintenance_tasks')
       .delete()
       .eq('id', id);
