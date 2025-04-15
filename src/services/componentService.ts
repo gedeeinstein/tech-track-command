@@ -2,15 +2,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Component } from "@/features/assemblies/types";
 import { toast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
 
 /**
  * Fetches all components from the database
  */
 export const getComponents = async (): Promise<Component[]> => {
   try {
-    // TypeScript doesn't know about our new tables yet
-    // We need to use 'any' to bypass TypeScript's type checking temporarily
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('components')
       .select('*');
     
@@ -62,8 +61,7 @@ export const createComponent = async (component: Omit<Component, 'id'>): Promise
       specifications: component.specifications || null
     };
     
-    // Use 'any' to bypass TypeScript's type checking temporarily
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('components')
       .insert([newComponent])
       .select()
@@ -118,8 +116,7 @@ export const updateComponent = async (component: Component): Promise<Component |
       specifications: component.specifications || null
     };
     
-    // Use 'any' to bypass TypeScript's type checking temporarily
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('components')
       .update(updateData)
       .eq('id', component.id)
@@ -164,8 +161,7 @@ export const updateComponent = async (component: Component): Promise<Component |
  */
 export const deleteComponent = async (id: string): Promise<boolean> => {
   try {
-    // Use 'any' to bypass TypeScript's type checking temporarily
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('components')
       .delete()
       .eq('id', id);

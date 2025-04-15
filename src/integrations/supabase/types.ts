@@ -9,35 +9,245 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      inv: {
+      assemblies: {
         Row: {
           created_at: string
-          id: number
+          description: string
+          id: string
+          last_maintenance: string
+          location: string
+          name: string
+          next_maintenance: string
+          status: string
         }
         Insert: {
           created_at?: string
-          id?: number
+          description: string
+          id: string
+          last_maintenance: string
+          location: string
+          name: string
+          next_maintenance: string
+          status: string
         }
         Update: {
           created_at?: string
-          id?: number
+          description?: string
+          id?: string
+          last_maintenance?: string
+          location?: string
+          name?: string
+          next_maintenance?: string
+          status?: string
         }
         Relationships: []
       }
-      "inventory-asset": {
+      assembly_assets: {
+        Row: {
+          assembly_id: string
+          asset_id: string
+        }
+        Insert: {
+          assembly_id: string
+          asset_id: string
+        }
+        Update: {
+          assembly_id?: string
+          asset_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assembly_assets_assembly_id_fkey"
+            columns: ["assembly_id"]
+            isOneToOne: false
+            referencedRelation: "assemblies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assembly_assets_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          accessories: string[] | null
+          assigned_to: string
+          created_at: string
+          division: string | null
+          expansion_cards: string[] | null
+          hostname: string | null
+          id: string
+          inventory_number: string
+          location: string
+          monitor: string | null
+          motherboard: string | null
+          name: string
+          operating_system: string | null
+          peripherals: string[] | null
+          processor: string | null
+          purchase_date: string
+          ram: string | null
+          status: string
+          storage: string | null
+          type: string
+          user_account: string | null
+          warranty: string
+          windows_license: string | null
+        }
+        Insert: {
+          accessories?: string[] | null
+          assigned_to: string
+          created_at?: string
+          division?: string | null
+          expansion_cards?: string[] | null
+          hostname?: string | null
+          id: string
+          inventory_number: string
+          location: string
+          monitor?: string | null
+          motherboard?: string | null
+          name: string
+          operating_system?: string | null
+          peripherals?: string[] | null
+          processor?: string | null
+          purchase_date: string
+          ram?: string | null
+          status: string
+          storage?: string | null
+          type: string
+          user_account?: string | null
+          warranty: string
+          windows_license?: string | null
+        }
+        Update: {
+          accessories?: string[] | null
+          assigned_to?: string
+          created_at?: string
+          division?: string | null
+          expansion_cards?: string[] | null
+          hostname?: string | null
+          id?: string
+          inventory_number?: string
+          location?: string
+          monitor?: string | null
+          motherboard?: string | null
+          name?: string
+          operating_system?: string | null
+          peripherals?: string[] | null
+          processor?: string | null
+          purchase_date?: string
+          ram?: string | null
+          status?: string
+          storage?: string | null
+          type?: string
+          user_account?: string | null
+          warranty?: string
+          windows_license?: string | null
+        }
+        Relationships: []
+      }
+      components: {
         Row: {
           created_at: string
-          id: number
+          id: string
+          manufacturer: string | null
+          model: string | null
+          name: string
+          serial_number: string | null
+          specifications: Json | null
+          subtype: string | null
+          type: string
         }
         Insert: {
           created_at?: string
-          id?: number
+          id: string
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          serial_number?: string | null
+          specifications?: Json | null
+          subtype?: string | null
+          type: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: string
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          serial_number?: string | null
+          specifications?: Json | null
+          subtype?: string | null
+          type?: string
         }
         Relationships: []
+      }
+      maintenance_tasks: {
+        Row: {
+          assembly_id: string | null
+          asset_id: string | null
+          assigned_to: string
+          completed_date: string | null
+          created_at: string
+          description: string
+          id: string
+          next_occurrence: string | null
+          priority: string
+          recurring: string
+          scheduled_date: string
+          status: string
+          title: string
+        }
+        Insert: {
+          assembly_id?: string | null
+          asset_id?: string | null
+          assigned_to: string
+          completed_date?: string | null
+          created_at?: string
+          description: string
+          id: string
+          next_occurrence?: string | null
+          priority: string
+          recurring: string
+          scheduled_date: string
+          status: string
+          title: string
+        }
+        Update: {
+          assembly_id?: string | null
+          asset_id?: string | null
+          assigned_to?: string
+          completed_date?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          next_occurrence?: string | null
+          priority?: string
+          recurring?: string
+          scheduled_date?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tasks_assembly_id_fkey"
+            columns: ["assembly_id"]
+            isOneToOne: false
+            referencedRelation: "assemblies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tasks_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
