@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent,
@@ -57,76 +56,15 @@ import {
   Monitor,
   Box,
   Keyboard,
-  Router
+  Router,
+  Loader2
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Component, COMPONENT_TYPES, COMPONENT_SUBTYPES, MANUFACTURERS } from "@/features/assemblies/types";
 import { useToast } from "@/hooks/use-toast";
+import { getComponents, createComponent, updateComponent, deleteComponent } from "@/services/componentService";
 
-// Mock components data
-const MOCK_COMPONENTS: Component[] = [
-  {
-    id: "CMP001",
-    name: "Intel Core i7-12700K",
-    type: "Processor",
-    subtype: "Intel",
-    serialNumber: "INTL87423523",
-    manufacturer: "Intel",
-    model: "Core i7-12700K",
-    specifications: {
-      cores: "12",
-      threads: "20",
-      baseFrequency: "3.6 GHz",
-      turboFrequency: "5.0 GHz"
-    }
-  },
-  {
-    id: "CMP002",
-    name: "Kingston HyperX 16GB DDR4",
-    type: "RAM",
-    subtype: "DDR4",
-    serialNumber: "KHX8734534",
-    manufacturer: "Kingston",
-    model: "HyperX Fury",
-    specifications: {
-      capacity: "16GB",
-      speed: "3200MHz",
-      latency: "CL16"
-    }
-  },
-  {
-    id: "CMP003",
-    name: "Samsung 970 EVO Plus 1TB",
-    type: "Storage",
-    subtype: "NVMe",
-    serialNumber: "SMNGPND792354",
-    manufacturer: "Samsung",
-    model: "970 EVO Plus",
-    specifications: {
-      capacity: "1TB",
-      interface: "PCIe 3.0 x4",
-      readSpeed: "3500 MB/s",
-      writeSpeed: "3300 MB/s"
-    }
-  },
-  {
-    id: "CMP004",
-    name: "ASUS ROG Strix B550-F",
-    type: "Motherboard",
-    subtype: "ATX",
-    serialNumber: "ASB55023453",
-    manufacturer: "Asus",
-    model: "ROG Strix B550-F Gaming",
-    specifications: {
-      chipset: "AMD B550",
-      socket: "AM4",
-      memorySlots: "4",
-      maxMemory: "128GB"
-    }
-  }
-];
-
-// Component icons based on type
+// Component icons based on type (keep the same)
 const getComponentIcon = (type: string) => {
   switch (type) {
     case "Processor":
@@ -153,12 +91,13 @@ const getComponentIcon = (type: string) => {
 };
 
 const Components: React.FC = () => {
-  const [components, setComponents] = useState<Component[]>(MOCK_COMPONENTS);
+  const [components, setComponents] = useState<Component[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [formOpen, setFormOpen] = useState(false);
   const [currentComponent, setCurrentComponent] = useState<Component | null>(null);
   const [selectedType, setSelectedType] = useState<string>(COMPONENT_TYPES[0]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const form = useForm<Component>({
@@ -173,6 +112,18 @@ const Components: React.FC = () => {
       specifications: {}
     }
   });
+
+  // Fetch components on component mount
+  useEffect(() => {
+    const fetchComponents = async () => {
+      setIsLoading(true);
+      const data = await getComponents();
+      setComponents(data);
+      setIsLoading(false);
+    };
+
+    fetchComponents();
+  }, []);
 
   // Filter components based on search
   const filteredComponents = components.filter(component => 
@@ -201,7 +152,7 @@ const Components: React.FC = () => {
       // If we're adding, reset form values
       setCurrentComponent(null);
       form.reset({
-        id: `CMP${String(components.length + 1).padStart(3, '0')}`,
+        id: "", // ID will be generated on the server
         name: "",
         type: COMPONENT_TYPES[0],
         subtype: COMPONENT_SUBTYPES[COMPONENT_TYPES[0]][0],
@@ -215,34 +166,30 @@ const Components: React.FC = () => {
     setFormOpen(true);
   };
 
-  const handleSaveComponent = (values: Component) => {
+  const handleSaveComponent = async (values: Component) => {
     if (currentComponent) {
       // Update existing component
-      setComponents(prevComponents => 
-        prevComponents.map(c => c.id === currentComponent.id ? values : c)
-      );
-      toast({
-        title: "Component updated",
-        description: `${values.name} has been updated successfully.`
-      });
+      const updatedComponent = await updateComponent(values);
+      if (updatedComponent) {
+        setComponents(prevComponents => 
+          prevComponents.map(c => c.id === currentComponent.id ? updatedComponent : c)
+        );
+      }
     } else {
       // Add new component
-      setComponents(prevComponents => [...prevComponents, values]);
-      toast({
-        title: "Component added",
-        description: `${values.name} has been added to the components.`
-      });
+      const newComponent = await createComponent(values);
+      if (newComponent) {
+        setComponents(prevComponents => [...prevComponents, newComponent]);
+      }
     }
     setFormOpen(false);
   };
 
-  const handleDeleteComponent = (id: string) => {
-    setComponents(prevComponents => prevComponents.filter(c => c.id !== id));
-    toast({
-      title: "Component deleted",
-      description: "The component has been removed.",
-      variant: "destructive"
-    });
+  const handleDeleteComponent = async (id: string) => {
+    const success = await deleteComponent(id);
+    if (success) {
+      setComponents(prevComponents => prevComponents.filter(c => c.id !== id));
+    }
   };
 
   const handleTypeChange = (type: string) => {
@@ -299,103 +246,23 @@ const Components: React.FC = () => {
         </div>
       </div>
 
-      {/* Components Grid/List View */}
-      {viewMode === "grid" ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredComponents.map((component) => (
-            <Card key={component.id} className="flex flex-col">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="mr-2">{component.name}</CardTitle>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleAddEdit(component)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteComponent(component.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                <div className="flex items-center mt-1">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                    {component.type}
-                  </span>
-                  {component.subtype && (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 ml-2">
-                      {component.subtype}
-                    </span>
-                  )}
-                </div>
-                {component.manufacturer && (
-                  <CardDescription className="pt-1">{component.manufacturer} {component.model}</CardDescription>
-                )}
-              </CardHeader>
-              <CardContent className="flex-1">
-                <div className="text-sm">
-                  <div className="flex items-center mb-2">
-                    {getComponentIcon(component.type)}
-                    <span className="font-medium ml-2 truncate">{component.serialNumber ? `SN: ${component.serialNumber}` : "No Serial Number"}</span>
-                  </div>
-                  {component.specifications && Object.keys(component.specifications).length > 0 && (
-                    <div className="space-y-1 mt-3 bg-muted p-2 rounded-md">
-                      {Object.entries(component.specifications).map(([key, value]) => (
-                        <div key={key} className="flex justify-between">
-                          <span className="text-xs text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                          <span className="text-xs font-medium">{value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="text-xs text-muted-foreground border-t pt-3">
-                <div className="w-full flex justify-between">
-                  <span>ID: {component.id}</span>
-                  {component.manufacturer && <span>Mfr: {component.manufacturer}</span>}
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
-          {filteredComponents.length === 0 && (
-            <div className="col-span-full text-center py-10">
-              <p className="text-muted-foreground">No components found.</p>
-            </div>
-          )}
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Loading components...</span>
         </div>
-      ) : (
-        <div className="rounded-md border">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-3 font-medium">Name</th>
-                <th className="text-left p-3 font-medium hidden md:table-cell">Type</th>
-                <th className="text-left p-3 font-medium hidden md:table-cell">Subtype</th>
-                <th className="text-left p-3 font-medium hidden lg:table-cell">Manufacturer</th>
-                <th className="text-left p-3 font-medium hidden lg:table-cell">Serial Number</th>
-                <th className="p-3 w-[60px]"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredComponents.map((component) => (
-                <tr key={component.id} className="border-b">
-                  <td className="p-3">
-                    <div className="font-medium">{component.name}</div>
-                    <div className="text-xs text-muted-foreground">{component.model}</div>
-                  </td>
-                  <td className="p-3 hidden md:table-cell">{component.type}</td>
-                  <td className="p-3 hidden md:table-cell">{component.subtype || "-"}</td>
-                  <td className="p-3 hidden lg:table-cell">{component.manufacturer || "-"}</td>
-                  <td className="p-3 hidden lg:table-cell">{component.serialNumber || "-"}</td>
-                  <td className="p-3">
+      )}
+
+      {/* Components Grid/List View */}
+      {!isLoading && (
+        viewMode === "grid" ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredComponents.map((component) => (
+              <Card key={component.id} className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="mr-2">{component.name}</CardTitle>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -413,19 +280,109 @@ const Components: React.FC = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </td>
+                  </div>
+                  <div className="flex items-center mt-1">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                      {component.type}
+                    </span>
+                    {component.subtype && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 ml-2">
+                        {component.subtype}
+                      </span>
+                    )}
+                  </div>
+                  {component.manufacturer && (
+                    <CardDescription className="pt-1">{component.manufacturer} {component.model}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <div className="text-sm">
+                    <div className="flex items-center mb-2">
+                      {getComponentIcon(component.type)}
+                      <span className="font-medium ml-2 truncate">{component.serialNumber ? `SN: ${component.serialNumber}` : "No Serial Number"}</span>
+                    </div>
+                    {component.specifications && Object.keys(component.specifications).length > 0 && (
+                      <div className="space-y-1 mt-3 bg-muted p-2 rounded-md">
+                        {Object.entries(component.specifications).map(([key, value]) => (
+                          <div key={key} className="flex justify-between">
+                            <span className="text-xs text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                            <span className="text-xs font-medium">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="text-xs text-muted-foreground border-t pt-3">
+                  <div className="w-full flex justify-between">
+                    <span>ID: {component.id}</span>
+                    {component.manufacturer && <span>Mfr: {component.manufacturer}</span>}
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+            {filteredComponents.length === 0 && !isLoading && (
+              <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground">No components found.</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3 font-medium">Name</th>
+                  <th className="text-left p-3 font-medium hidden md:table-cell">Type</th>
+                  <th className="text-left p-3 font-medium hidden md:table-cell">Subtype</th>
+                  <th className="text-left p-3 font-medium hidden lg:table-cell">Manufacturer</th>
+                  <th className="text-left p-3 font-medium hidden lg:table-cell">Serial Number</th>
+                  <th className="p-3 w-[60px]"></th>
                 </tr>
-              ))}
-              {filteredComponents.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="text-center p-6">
-                    No components found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredComponents.map((component) => (
+                  <tr key={component.id} className="border-b">
+                    <td className="p-3">
+                      <div className="font-medium">{component.name}</div>
+                      <div className="text-xs text-muted-foreground">{component.model}</div>
+                    </td>
+                    <td className="p-3 hidden md:table-cell">{component.type}</td>
+                    <td className="p-3 hidden md:table-cell">{component.subtype || "-"}</td>
+                    <td className="p-3 hidden lg:table-cell">{component.manufacturer || "-"}</td>
+                    <td className="p-3 hidden lg:table-cell">{component.serialNumber || "-"}</td>
+                    <td className="p-3">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleAddEdit(component)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteComponent(component.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
+                {filteredComponents.length === 0 && !isLoading && (
+                  <tr>
+                    <td colSpan={6} className="text-center p-6">
+                      No components found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       {/* Add/Edit Component Form Dialog */}
@@ -457,7 +414,7 @@ const Components: React.FC = () => {
                           <FormItem>
                             <FormLabel>Component ID</FormLabel>
                             <FormControl>
-                              <Input {...field} readOnly />
+                              <Input {...field} readOnly disabled={!currentComponent} />
                             </FormControl>
                           </FormItem>
                         )}

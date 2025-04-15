@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,10 +14,12 @@ import {
   AlertTriangle,
   Laptop,
   Layers,
-  User
+  User,
+  Loader2
 } from "lucide-react";
 import { Task } from "../types";
 import { cn } from "@/lib/utils";
+import { markTaskCompleted } from "@/services/maintenanceTaskService";
 
 interface TaskDetailsProps {
   task: Task | null;
@@ -25,6 +28,7 @@ interface TaskDetailsProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onMarkCompleted: (id: string) => void;
+  refreshTasks?: () => void;
 }
 
 const TaskDetails: React.FC<TaskDetailsProps> = ({
@@ -34,7 +38,10 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
   onEdit,
   onDelete,
   onMarkCompleted,
+  refreshTasks
 }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
   if (!task) return null;
 
   const handleEdit = () => {
@@ -47,9 +54,19 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
     onOpenChange(false);
   };
 
-  const handleMarkCompleted = () => {
-    onMarkCompleted(task.id);
-    // Keep dialog open to show the updated status
+  const handleMarkCompleted = async () => {
+    setIsLoading(true);
+    try {
+      await markTaskCompleted(task.id);
+      onMarkCompleted(task.id);
+      
+      // Refresh the tasks if a refresh function is provided
+      if (refreshTasks) {
+        refreshTasks();
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -176,8 +193,13 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
               variant="outline" 
               className="gap-1 text-green-600 border-green-200 hover:bg-green-50"
               onClick={handleMarkCompleted}
+              disabled={isLoading}
             >
-              <CheckCircle2 className="h-4 w-4" />
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
               Mark Completed
             </Button>
           )}
@@ -185,6 +207,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
             variant="outline" 
             className="gap-1"
             onClick={handleEdit}
+            disabled={isLoading}
           >
             <Edit className="h-4 w-4" />
             Edit
@@ -193,6 +216,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
             variant="outline" 
             className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
             onClick={handleDelete}
+            disabled={isLoading}
           >
             <Trash2 className="h-4 w-4" />
             Delete
