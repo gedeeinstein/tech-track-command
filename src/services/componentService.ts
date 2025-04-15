@@ -16,7 +16,7 @@ export const getComponents = async (): Promise<Component[]> => {
       throw error;
     }
     
-    return data || [];
+    return (data as unknown as Component[]) || [];
   } catch (error) {
     console.error('Error fetching components:', error);
     toast({
@@ -56,7 +56,7 @@ export const createComponent = async (component: Omit<Component, 'id'>): Promise
       description: `${component.name} has been added successfully.`
     });
     
-    return data;
+    return data as unknown as Component;
   } catch (error) {
     console.error('Error creating component:', error);
     toast({
@@ -89,7 +89,7 @@ export const updateComponent = async (component: Component): Promise<Component |
       description: `${component.name} has been updated successfully.`
     });
     
-    return data;
+    return data as unknown as Component;
   } catch (error) {
     console.error('Error updating component:', error);
     toast({
