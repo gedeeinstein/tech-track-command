@@ -3,6 +3,45 @@ import { supabase } from "@/integrations/supabase/client";
 import { Component } from "@/features/assemblies/types";
 import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import { Json } from "@/integrations/supabase/types";
+
+type ComponentRow = Database['public']['Tables']['components']['Row'];
+
+/**
+ * Helper function to convert database row to Component
+ */
+const mapRowToComponent = (row: ComponentRow): Component => ({
+  id: row.id,
+  name: row.name,
+  type: row.type,
+  subtype: row.subtype || undefined,
+  serialNumber: row.serial_number || undefined,
+  manufacturer: row.manufacturer || undefined,
+  model: row.model || undefined,
+  specifications: row.specifications ? convertJsonToRecordString(row.specifications) : undefined
+});
+
+/**
+ * Helper function to convert JSON to Record<string, string>
+ */
+const convertJsonToRecordString = (json: Json): Record<string, string> => {
+  if (typeof json === 'object' && json !== null && !Array.isArray(json)) {
+    const result: Record<string, string> = {};
+    Object.entries(json).forEach(([key, value]) => {
+      result[key] = String(value);
+    });
+    return result;
+  }
+  return {};
+};
+
+/**
+ * Helper function to convert specifications to JSON
+ */
+const convertSpecificationsToJson = (specifications?: Record<string, string>): Json => {
+  if (!specifications) return null;
+  return specifications as unknown as Json;
+};
 
 /**
  * Fetches all components from the database
@@ -17,17 +56,8 @@ export const getComponents = async (): Promise<Component[]> => {
       throw error;
     }
     
-    // Transform data to match Component type if needed
-    const components: Component[] = data.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      type: item.type,
-      subtype: item.subtype || undefined,
-      serialNumber: item.serial_number || undefined,
-      manufacturer: item.manufacturer || undefined,
-      model: item.model || undefined,
-      specifications: item.specifications || undefined
-    }));
+    // Transform data to match Component type
+    const components: Component[] = data.map(mapRowToComponent);
     
     return components;
   } catch (error) {
@@ -58,7 +88,7 @@ export const createComponent = async (component: Omit<Component, 'id'>): Promise
       serial_number: component.serialNumber || null,
       manufacturer: component.manufacturer || null,
       model: component.model || null,
-      specifications: component.specifications || null
+      specifications: convertSpecificationsToJson(component.specifications)
     };
     
     const { data, error } = await supabase
@@ -77,18 +107,7 @@ export const createComponent = async (component: Omit<Component, 'id'>): Promise
     });
     
     // Transform response to match Component type
-    const createdComponent: Component = {
-      id: data.id,
-      name: data.name,
-      type: data.type,
-      subtype: data.subtype || undefined,
-      serialNumber: data.serial_number || undefined,
-      manufacturer: data.manufacturer || undefined,
-      model: data.model || undefined,
-      specifications: data.specifications || undefined
-    };
-    
-    return createdComponent;
+    return mapRowToComponent(data);
   } catch (error) {
     console.error('Error creating component:', error);
     toast({
@@ -113,7 +132,7 @@ export const updateComponent = async (component: Component): Promise<Component |
       serial_number: component.serialNumber || null,
       manufacturer: component.manufacturer || null,
       model: component.model || null,
-      specifications: component.specifications || null
+      specifications: convertSpecificationsToJson(component.specifications)
     };
     
     const { data, error } = await supabase
@@ -133,18 +152,7 @@ export const updateComponent = async (component: Component): Promise<Component |
     });
     
     // Transform response to match Component type
-    const updatedComponent: Component = {
-      id: data.id,
-      name: data.name,
-      type: data.type,
-      subtype: data.subtype || undefined,
-      serialNumber: data.serial_number || undefined,
-      manufacturer: data.manufacturer || undefined,
-      model: data.model || undefined,
-      specifications: data.specifications || undefined
-    };
-    
-    return updatedComponent;
+    return mapRowToComponent(data);
   } catch (error) {
     console.error('Error updating component:', error);
     toast({
