@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -17,11 +17,29 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,53 +55,11 @@ import {
   ShieldCheck,
   User,
   Mail,
-  Key,
   Lock
 } from "lucide-react";
-
-// Mock users data
-const MOCK_USERS = [
-  {
-    id: "U001",
-    name: "John Smith",
-    email: "john.smith@company.com",
-    role: "Admin",
-    status: "Active",
-    lastLogin: "2024-04-11 09:25 AM"
-  },
-  {
-    id: "U002",
-    name: "Emma Wilson",
-    email: "emma.wilson@company.com",
-    role: "Technician",
-    status: "Active",
-    lastLogin: "2024-04-10 03:45 PM"
-  },
-  {
-    id: "U003",
-    name: "Michael Brown",
-    email: "michael.brown@company.com",
-    role: "Technician",
-    status: "Active",
-    lastLogin: "2024-04-09 11:15 AM"
-  },
-  {
-    id: "U004",
-    name: "Sarah Davis",
-    email: "sarah.davis@company.com",
-    role: "Viewer",
-    status: "Inactive",
-    lastLogin: "2024-03-28 02:10 PM"
-  },
-  {
-    id: "U005",
-    name: "Robert Johnson",
-    email: "robert.johnson@company.com",
-    role: "Admin",
-    status: "Active",
-    lastLogin: "2024-04-11 08:50 AM"
-  }
-];
+import { getUsers, createUser, updateUser, deleteUser, User as UserType } from "@/services/userService";
+import { useForm } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // User roles and their permissions
 const USER_ROLES = [
@@ -104,12 +80,33 @@ const USER_ROLES = [
   }
 ];
 
+interface UserFormValues {
+  name: string;
+  email: string;
+  password?: string;
+  role: string;
+  status: string;
+}
+
 const Users: React.FC = () => {
-  const [users, setUsers] = useState(MOCK_USERS);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+
+  const form = useForm<UserFormValues>({
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      role: "Viewer",
+      status: "Active"
+    }
+  });
 
   // Filter users based on search
   const filteredUsers = users.filter(user => 
@@ -118,23 +115,99 @@ const Users: React.FC = () => {
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddEdit = (user: any = null) => {
+  // Fetch users from database
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    const fetchedUsers = await getUsers();
+    setUsers(fetchedUsers);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleAddEdit = (user: UserType | null = null) => {
     setCurrentUser(user);
     setShowPassword(false);
+    
+    if (user) {
+      form.reset({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status
+      });
+    } else {
+      form.reset({
+        name: "",
+        email: "",
+        password: "",
+        role: "Viewer",
+        status: "Active"
+      });
+    }
+    
     setFormOpen(true);
   };
 
-  const handleSaveUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, you would save the user to your backend
-    // For now, just close the dialog
-    setFormOpen(false);
-    setCurrentUser(null);
+  const handleSaveUser = async (values: UserFormValues) => {
+    setIsLoading(true);
+    
+    try {
+      if (currentUser) {
+        // Update existing user
+        const updatedUser = await updateUser({
+          ...currentUser,
+          name: values.name,
+          email: values.email,
+          role: values.role,
+          status: values.status
+        });
+        
+        if (updatedUser) {
+          setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
+        }
+      } else {
+        // Create new user
+        const newUser = await createUser({
+          name: values.name,
+          email: values.email,
+          role: values.role,
+          status: values.status
+        });
+        
+        if (newUser) {
+          setUsers([...users, newUser]);
+        }
+      }
+      
+      setFormOpen(false);
+    } catch (error) {
+      console.error('Error saving user:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
-    // In a real app, you would delete from your backend
-    setUsers(users.filter(user => user.id !== id));
+  const confirmDeleteUser = (id: string) => {
+    setUserToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setIsLoading(true);
+    const success = await deleteUser(userToDelete);
+    
+    if (success) {
+      setUsers(users.filter(user => user.id !== userToDelete));
+    }
+    
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
+    setIsLoading(false);
   };
 
   const getRoleIcon = (role: string) => {
@@ -204,13 +277,13 @@ const Users: React.FC = () => {
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <span className={cn(
-                      "status-badge",
-                      user.status === "Active" ? "status-active" : "status-decommissioned"
+                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                      user.status === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                     )}>
                       {user.status}
                     </span>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">{user.lastLogin}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{user.lastLogin || "Never"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -223,7 +296,7 @@ const Users: React.FC = () => {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteUser(user.id)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => confirmDeleteUser(user.id)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
@@ -235,7 +308,7 @@ const Users: React.FC = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  No users found.
+                  {isLoading ? "Loading users..." : "No users found."}
                 </TableCell>
               </TableRow>
             )}
@@ -254,101 +327,172 @@ const Users: React.FC = () => {
                 : "Enter the details of the new user to add them to the system."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSaveUser} className="space-y-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Full Name
-              </Label>
-              <Input
-                id="name"
-                defaultValue={currentUser?.name || ""}
-                className="col-span-3"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSaveUser)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <Input {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <div className="relative col-span-3">
-                <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  defaultValue={currentUser?.email || ""}
-                  className="pl-8"
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input type="email" className="pl-8" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {!currentUser && (
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type={showPassword ? "text" : "password"}
+                            className="pl-8"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? "Hide" : "Show"}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </div>
-            {!currentUser && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="password" className="text-right">
-                  Password
-                </Label>
-                <div className="relative col-span-3">
-                  <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    className="pl-8"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
-                Role
-              </Label>
-              <select
-                id="role"
-                defaultValue={currentUser?.role || "Viewer"}
-                className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm col-span-3"
-              >
+              )}
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {USER_ROLES.map(role => (
+                          <SelectItem key={role.name} value={role.name}>
+                            <div className="flex items-center gap-2">
+                              {role.icon}
+                              <span>{role.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="mt-4 rounded-md bg-muted p-4">
+                <div className="font-medium mb-2">Role Permissions</div>
                 {USER_ROLES.map(role => (
-                  <option key={role.name} value={role.name}>{role.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <select
-                id="status"
-                defaultValue={currentUser?.status || "Active"}
-                className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm col-span-3"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-            <div className="mt-4 rounded-md bg-muted p-4">
-              <div className="font-medium mb-2">Role Permissions</div>
-              {USER_ROLES.map(role => (
-                <div key={role.name} className={cn(
-                  "p-2 rounded-md my-1",
-                  currentUser?.role === role.name ? "bg-primary/10" : ""
-                )}>
-                  <div className="flex items-center gap-2">
-                    {role.icon}
-                    <span className="font-medium">{role.name}</span>
+                  <div key={role.name} className={cn(
+                    "p-2 rounded-md my-1",
+                    form.watch("role") === role.name ? "bg-primary/10" : ""
+                  )}>
+                    <div className="flex items-center gap-2">
+                      {role.icon}
+                      <span className="font-medium">{role.name}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{role.description}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{role.description}</p>
-                </div>
-              ))}
-            </div>
-            <DialogFooter>
-              <Button type="submit">{currentUser ? "Update User" : "Add User"}</Button>
-            </DialogFooter>
-          </form>
+                ))}
+              </div>
+
+              <DialogFooter>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Saving..." : currentUser ? "Update User" : "Add User"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user
+              and remove their data from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} disabled={isLoading}>
+              {isLoading ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
