@@ -9,10 +9,11 @@ const dbToComponent = (dbComponent: any): Component => {
   return {
     id: dbComponent.id,
     name: dbComponent.name,
-    type: dbComponent.type_id,
+    // Fix: Use type directly instead of type_id
+    type: dbComponent.type || "",
     subtype: dbComponent.subtype,
     serialNumber: dbComponent.serial_number,
-    manufacturer: dbComponent.brand_id,
+    manufacturer: dbComponent.manufacturer,
     model: dbComponent.model,
     specifications: dbComponent.specifications ? convertJsonbToRecord(dbComponent.specifications) : undefined
   };
@@ -24,10 +25,10 @@ const componentToDB = (component: Partial<Component>): any => {
   
   if (component.id !== undefined) dbComponent.id = component.id;
   if (component.name !== undefined) dbComponent.name = component.name;
-  if (component.type !== undefined) dbComponent.type_id = component.type;
+  if (component.type !== undefined) dbComponent.type = component.type;
   if (component.subtype !== undefined) dbComponent.subtype = component.subtype;
   if (component.serialNumber !== undefined) dbComponent.serial_number = component.serialNumber;
-  if (component.manufacturer !== undefined) dbComponent.brand_id = component.manufacturer;
+  if (component.manufacturer !== undefined) dbComponent.manufacturer = component.manufacturer;
   if (component.model !== undefined) dbComponent.model = component.model;
   if (component.specifications !== undefined) dbComponent.specifications = component.specifications as unknown as Json;
   
@@ -57,11 +58,12 @@ export const fetchComponents = async (): Promise<Component[]> => {
       throw error;
     }
 
-    return (data || []).map((item: any) => {
-      const component = dbToComponent(item);
-      // We'll resolve type and brand names separately if needed
-      return component;
-    });
+    console.log("Raw component data from API:", data);
+
+    const components = (data || []).map(dbToComponent);
+    console.log("Mapped components:", components);
+    
+    return components;
   } catch (error) {
     console.error("Error fetching components:", error);
     toast({

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AssetTable from "@/features/assets/components/AssetTable";
 import AssetHeader from "@/features/assets/components/AssetHeader";
 import AssetFilters from "@/features/assets/components/AssetFilters";
@@ -29,11 +29,25 @@ const Assets = () => {
     queryFn: fetchAssets
   });
 
-  // Fetch components for the form
-  const { data: components = [], isLoading: isLoadingComponents } = useQuery({
+  // Fetch components for the form with debugging
+  const { 
+    data: components = [], 
+    isLoading: isLoadingComponents, 
+    isError: isErrorComponents,
+    error: componentsError
+  } = useQuery({
     queryKey: ['components'],
     queryFn: fetchComponents
   });
+
+  // Debug component data on load
+  useEffect(() => {
+    if (components.length > 0) {
+      console.log("Loaded components:", components);
+      console.log("Processors:", components.filter(c => c.type === "Processor"));
+      console.log("RAM:", components.filter(c => c.type === "RAM"));
+    }
+  }, [components]);
 
   // Mutations
   const createMutation = useMutation({
@@ -146,6 +160,18 @@ const Assets = () => {
             {assetsError instanceof Error 
               ? assetsError.message 
               : "Failed to load assets. Please try again later."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isErrorComponents && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Components</AlertTitle>
+          <AlertDescription>
+            {componentsError instanceof Error 
+              ? componentsError.message 
+              : "Failed to load components. Component selection in forms may not work correctly."}
           </AlertDescription>
         </Alert>
       )}
