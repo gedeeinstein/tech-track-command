@@ -11,7 +11,7 @@ const dbToComponent = (dbComponent: any): Component => {
     name: dbComponent.name,
     type: dbComponent.type_id,
     subtype: dbComponent.subtype,
-    serialNumber: dbComponent.component_id,
+    serialNumber: dbComponent.serial_number,
     manufacturer: dbComponent.brand_id,
     model: dbComponent.model,
     specifications: dbComponent.specifications ? convertJsonbToRecord(dbComponent.specifications) : undefined
@@ -26,7 +26,7 @@ const componentToDB = (component: Partial<Component>): any => {
   if (component.name !== undefined) dbComponent.name = component.name;
   if (component.type !== undefined) dbComponent.type_id = component.type;
   if (component.subtype !== undefined) dbComponent.subtype = component.subtype;
-  // component_id is auto-generated, don't set it
+  if (component.serialNumber !== undefined) dbComponent.serial_number = component.serialNumber;
   if (component.manufacturer !== undefined) dbComponent.brand_id = component.manufacturer;
   if (component.model !== undefined) dbComponent.model = component.model;
   if (component.specifications !== undefined) dbComponent.specifications = component.specifications as unknown as Json;
@@ -49,23 +49,17 @@ const convertJsonbToRecord = (jsonb: any): Record<string, string> => {
 
 export const fetchComponents = async (): Promise<Component[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("components")
-      .select(`
-        *,
-        brand:brand_id(name),
-        type:type_id(name)
-      `);
+      .select("*");
 
     if (error) {
       throw error;
     }
 
-    return (data || []).map((item) => {
+    return (data || []).map((item: any) => {
       const component = dbToComponent(item);
-      // Add the resolved names
-      if (item.type) component.type = item.type.name;
-      if (item.brand) component.manufacturer = item.brand.name;
+      // We'll resolve type and brand names separately if needed
       return component;
     });
   } catch (error) {
@@ -81,24 +75,18 @@ export const fetchComponents = async (): Promise<Component[]> => {
 
 export const fetchComponentsByType = async (typeId: string): Promise<Component[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("components")
-      .select(`
-        *,
-        brand:brand_id(name),
-        type:type_id(name)
-      `)
+      .select("*")
       .eq("type_id", typeId);
 
     if (error) {
       throw error;
     }
 
-    return (data || []).map((item) => {
+    return (data || []).map((item: any) => {
       const component = dbToComponent(item);
-      // Add the resolved names
-      if (item.type) component.type = item.type.name;
-      if (item.brand) component.manufacturer = item.brand.name;
+      // We'll resolve type and brand names separately if needed
       return component;
     });
   } catch (error) {
@@ -116,14 +104,10 @@ export const createComponent = async (component: Omit<Component, "id">): Promise
   try {
     const dbComponent = componentToDB(component);
     
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("components")
       .insert(dbComponent)
-      .select(`
-        *,
-        brand:brand_id(name),
-        type:type_id(name)
-      `)
+      .select("*")
       .single();
 
     if (error) {
@@ -136,10 +120,6 @@ export const createComponent = async (component: Omit<Component, "id">): Promise
     });
 
     const newComponent = dbToComponent(data);
-    // Add the resolved names
-    if (data.type) newComponent.type = data.type.name;
-    if (data.brand) newComponent.manufacturer = data.brand.name;
-    
     return newComponent;
   } catch (error) {
     console.error("Error creating component:", error);
@@ -156,15 +136,11 @@ export const updateComponent = async (id: string, component: Partial<Component>)
   try {
     const dbComponent = componentToDB(component);
     
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("components")
       .update(dbComponent)
       .eq("id", id)
-      .select(`
-        *,
-        brand:brand_id(name),
-        type:type_id(name)
-      `)
+      .select("*")
       .single();
 
     if (error) {
@@ -177,10 +153,6 @@ export const updateComponent = async (id: string, component: Partial<Component>)
     });
 
     const updatedComponent = dbToComponent(data);
-    // Add the resolved names
-    if (data.type) updatedComponent.type = data.type.name;
-    if (data.brand) updatedComponent.manufacturer = data.brand.name;
-    
     return updatedComponent;
   } catch (error) {
     console.error("Error updating component:", error);
@@ -195,7 +167,7 @@ export const updateComponent = async (id: string, component: Partial<Component>)
 
 export const deleteComponent = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("components")
       .delete()
       .eq("id", id);

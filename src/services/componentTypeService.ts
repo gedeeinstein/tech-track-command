@@ -10,7 +10,7 @@ export interface ComponentType {
 
 export const fetchComponentTypes = async (): Promise<ComponentType[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("component_types")
       .select("*")
       .order("name");
@@ -33,7 +33,7 @@ export const fetchComponentTypes = async (): Promise<ComponentType[]> => {
 
 export const createComponentType = async (componentType: Omit<ComponentType, "id">): Promise<ComponentType | null> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("component_types")
       .insert(componentType)
       .select()
@@ -62,7 +62,7 @@ export const createComponentType = async (componentType: Omit<ComponentType, "id
 
 export const updateComponentType = async (id: string, componentType: Partial<ComponentType>): Promise<ComponentType | null> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("component_types")
       .update(componentType)
       .eq("id", id)
@@ -92,7 +92,7 @@ export const updateComponentType = async (id: string, componentType: Partial<Com
 
 export const deleteComponentType = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("component_types")
       .delete()
       .eq("id", id);
