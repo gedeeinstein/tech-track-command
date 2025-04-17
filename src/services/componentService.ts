@@ -1,194 +1,220 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 import { Component } from "@/features/assemblies/types";
-import { toast } from "@/hooks/use-toast";
-import { Database } from "@/integrations/supabase/types";
 import { Json } from "@/integrations/supabase/types";
 
-type ComponentRow = Database['public']['Tables']['components']['Row'];
+// Helper function to convert database component to Component
+const dbToComponent = (dbComponent: any): Component => {
+  return {
+    id: dbComponent.id,
+    name: dbComponent.name,
+    type: dbComponent.type_id,
+    subtype: dbComponent.subtype,
+    serialNumber: dbComponent.component_id,
+    manufacturer: dbComponent.brand_id,
+    model: dbComponent.model,
+    specifications: dbComponent.specifications ? convertJsonbToRecord(dbComponent.specifications) : undefined
+  };
+};
 
-/**
- * Helper function to convert database row to Component
- */
-const mapRowToComponent = (row: ComponentRow): Component => ({
-  id: row.id,
-  name: row.name,
-  type: row.type,
-  subtype: row.subtype || undefined,
-  serialNumber: row.serial_number || undefined,
-  manufacturer: row.manufacturer || undefined,
-  model: row.model || undefined,
-  specifications: row.specifications ? convertJsonToRecordString(row.specifications) : undefined
-});
+// Helper function to convert Component to database format
+const componentToDB = (component: Partial<Component>): any => {
+  const dbComponent: any = {};
+  
+  if (component.id !== undefined) dbComponent.id = component.id;
+  if (component.name !== undefined) dbComponent.name = component.name;
+  if (component.type !== undefined) dbComponent.type_id = component.type;
+  if (component.subtype !== undefined) dbComponent.subtype = component.subtype;
+  // component_id is auto-generated, don't set it
+  if (component.manufacturer !== undefined) dbComponent.brand_id = component.manufacturer;
+  if (component.model !== undefined) dbComponent.model = component.model;
+  if (component.specifications !== undefined) dbComponent.specifications = component.specifications as unknown as Json;
+  
+  return dbComponent;
+};
 
-/**
- * Helper function to convert JSON to Record<string, string>
- */
-const convertJsonToRecordString = (json: Json): Record<string, string> => {
-  if (typeof json === 'object' && json !== null && !Array.isArray(json)) {
-    const result: Record<string, string> = {};
-    Object.entries(json).forEach(([key, value]) => {
-      result[key] = String(value);
-    });
-    return result;
+// Helper function to convert JSONB to Record<string, string>
+const convertJsonbToRecord = (jsonb: any): Record<string, string> => {
+  if (!jsonb) return {};
+  
+  const result: Record<string, string> = {};
+  for (const key in jsonb) {
+    if (Object.prototype.hasOwnProperty.call(jsonb, key)) {
+      result[key] = String(jsonb[key]);
+    }
   }
-  return {};
+  return result;
 };
 
-/**
- * Helper function to convert specifications to JSON
- */
-const convertSpecificationsToJson = (specifications?: Record<string, string>): Json => {
-  if (!specifications) return null;
-  return specifications as unknown as Json;
-};
-
-/**
- * Fetches all components from the database
- */
-export const getComponents = async (): Promise<Component[]> => {
+export const fetchComponents = async (): Promise<Component[]> => {
   try {
     const { data, error } = await supabase
-      .from('components')
-      .select('*');
-    
+      .from("components")
+      .select(`
+        *,
+        brand:brand_id(name),
+        type:type_id(name)
+      `);
+
     if (error) {
       throw error;
     }
-    
-    // Transform data to match Component type
-    const components: Component[] = data.map(mapRowToComponent);
-    
-    return components;
+
+    return (data || []).map((item) => {
+      const component = dbToComponent(item);
+      // Add the resolved names
+      if (item.type) component.type = item.type.name;
+      if (item.brand) component.manufacturer = item.brand.name;
+      return component;
+    });
   } catch (error) {
-    console.error('Error fetching components:', error);
+    console.error("Error fetching components:", error);
     toast({
-      title: "Error fetching components",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to fetch components",
       variant: "destructive"
     });
     return [];
   }
 };
 
-/**
- * Creates a new component in the database
- */
-export const createComponent = async (component: Omit<Component, 'id'>): Promise<Component | null> => {
+export const fetchComponentsByType = async (typeId: string): Promise<Component[]> => {
   try {
-    // Generate a new ID using a pattern similar to the mock data
-    const newId = `CMP${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-    
-    // Transform the component to match database schema
-    const newComponent = {
-      id: newId,
-      name: component.name,
-      type: component.type,
-      subtype: component.subtype || null,
-      serial_number: component.serialNumber || null,
-      manufacturer: component.manufacturer || null,
-      model: component.model || null,
-      specifications: convertSpecificationsToJson(component.specifications)
-    };
-    
     const { data, error } = await supabase
-      .from('components')
-      .insert([newComponent])
-      .select()
-      .single();
-    
+      .from("components")
+      .select(`
+        *,
+        brand:brand_id(name),
+        type:type_id(name)
+      `)
+      .eq("type_id", typeId);
+
     if (error) {
       throw error;
     }
-    
-    toast({
-      title: "Component created",
-      description: `${component.name} has been added successfully.`
+
+    return (data || []).map((item) => {
+      const component = dbToComponent(item);
+      // Add the resolved names
+      if (item.type) component.type = item.type.name;
+      if (item.brand) component.manufacturer = item.brand.name;
+      return component;
     });
-    
-    // Transform response to match Component type
-    return mapRowToComponent(data);
   } catch (error) {
-    console.error('Error creating component:', error);
+    console.error("Error fetching components by type:", error);
     toast({
-      title: "Error creating component",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to fetch components",
+      variant: "destructive"
+    });
+    return [];
+  }
+};
+
+export const createComponent = async (component: Omit<Component, "id">): Promise<Component | null> => {
+  try {
+    const dbComponent = componentToDB(component);
+    
+    const { data, error } = await supabase
+      .from("components")
+      .insert(dbComponent)
+      .select(`
+        *,
+        brand:brand_id(name),
+        type:type_id(name)
+      `)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    toast({
+      title: "Component Created",
+      description: `${component.name} has been created successfully.`
+    });
+
+    const newComponent = dbToComponent(data);
+    // Add the resolved names
+    if (data.type) newComponent.type = data.type.name;
+    if (data.brand) newComponent.manufacturer = data.brand.name;
+    
+    return newComponent;
+  } catch (error) {
+    console.error("Error creating component:", error);
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to create component",
       variant: "destructive"
     });
     return null;
   }
 };
 
-/**
- * Updates an existing component in the database
- */
-export const updateComponent = async (component: Component): Promise<Component | null> => {
+export const updateComponent = async (id: string, component: Partial<Component>): Promise<Component | null> => {
   try {
-    // Transform the component to match database schema
-    const updateData = {
-      name: component.name,
-      type: component.type,
-      subtype: component.subtype || null,
-      serial_number: component.serialNumber || null,
-      manufacturer: component.manufacturer || null,
-      model: component.model || null,
-      specifications: convertSpecificationsToJson(component.specifications)
-    };
+    const dbComponent = componentToDB(component);
     
     const { data, error } = await supabase
-      .from('components')
-      .update(updateData)
-      .eq('id', component.id)
-      .select()
+      .from("components")
+      .update(dbComponent)
+      .eq("id", id)
+      .select(`
+        *,
+        brand:brand_id(name),
+        type:type_id(name)
+      `)
       .single();
-    
+
     if (error) {
       throw error;
     }
-    
+
     toast({
-      title: "Component updated",
-      description: `${component.name} has been updated successfully.`
+      title: "Component Updated",
+      description: `${component.name || 'Component'} has been updated successfully.`
     });
+
+    const updatedComponent = dbToComponent(data);
+    // Add the resolved names
+    if (data.type) updatedComponent.type = data.type.name;
+    if (data.brand) updatedComponent.manufacturer = data.brand.name;
     
-    // Transform response to match Component type
-    return mapRowToComponent(data);
+    return updatedComponent;
   } catch (error) {
-    console.error('Error updating component:', error);
+    console.error("Error updating component:", error);
     toast({
-      title: "Error updating component",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to update component",
       variant: "destructive"
     });
     return null;
   }
 };
 
-/**
- * Deletes a component from the database
- */
 export const deleteComponent = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('components')
+      .from("components")
       .delete()
-      .eq('id', id);
-    
+      .eq("id", id);
+
     if (error) {
       throw error;
     }
-    
+
     toast({
-      title: "Component deleted",
-      description: "The component has been removed successfully."
+      title: "Component Deleted",
+      description: "The component has been deleted successfully."
     });
-    
+
     return true;
   } catch (error) {
-    console.error('Error deleting component:', error);
+    console.error("Error deleting component:", error);
     toast({
-      title: "Error deleting component",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to delete component",
       variant: "destructive"
     });
     return false;

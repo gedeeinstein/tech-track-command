@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import AssetTable from "@/features/assets/components/AssetTable";
 import AssetHeader from "@/features/assets/components/AssetHeader";
 import AssetFilters from "@/features/assets/components/AssetFilters";
@@ -7,10 +7,10 @@ import AssetForm from "@/features/assets/components/AssetForm";
 import { toast } from "@/components/ui/use-toast";
 import { Asset } from "@/features/assemblies/types";
 import { ASSET_TYPES, ASSET_STATUSES } from "@/features/assets/data/mockData";
-import { MOCK_COMPONENTS } from "@/features/assets/data/mockData";
 import { useDialog } from "@/hooks/useDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAssets, createAsset, updateAsset, deleteAsset } from "@/services/assetService";
+import { fetchComponents } from "@/services/componentService";
 
 const Assets = () => {
   const queryClient = useQueryClient();
@@ -22,9 +22,15 @@ const Assets = () => {
   const [isFormOpen, setIsFormOpen] = useDialog(false);
 
   // Fetch assets
-  const { data: assets = [], isLoading, isError } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets, isError: isErrorAssets } = useQuery({
     queryKey: ['assets'],
     queryFn: fetchAssets
+  });
+
+  // Fetch components for the form
+  const { data: components = [], isLoading: isLoadingComponents } = useQuery({
+    queryKey: ['components'],
+    queryFn: fetchComponents
   });
 
   // Mutations
@@ -124,9 +130,11 @@ const Assets = () => {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  if (isError) {
+  if (isErrorAssets) {
     return <div className="p-4 text-red-500">Error loading assets. Please try again later.</div>;
   }
+
+  const isLoading = isLoadingAssets || isLoadingComponents;
 
   return (
     <div className="space-y-6">
@@ -162,7 +170,7 @@ const Assets = () => {
         currentAsset={currentAsset}
         assets={assets}
         onSubmit={handleFormSubmit}
-        components={MOCK_COMPONENTS}
+        components={components}
       />
     </div>
   );
