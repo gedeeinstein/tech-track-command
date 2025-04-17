@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Component } from "@/features/assemblies/types";
-import { getComponents, createComponent, updateComponent, deleteComponent } from "@/services/componentService";
+import { fetchComponents, createComponent, updateComponent, deleteComponent } from "@/services/componentService";
 
 export const useComponents = () => {
   const [components, setComponents] = useState<Component[]>([]);
@@ -14,7 +14,7 @@ export const useComponents = () => {
 
   // Fetch components on mount
   useEffect(() => {
-    fetchComponents();
+    fetchComponentsList();
   }, []);
 
   // Filter components based on search
@@ -26,9 +26,9 @@ export const useComponents = () => {
   );
 
   // Fetch all components
-  const fetchComponents = async () => {
+  const fetchComponentsList = async () => {
     setIsLoading(true);
-    const data = await getComponents();
+    const data = await fetchComponents();
     setComponents(data);
     setIsLoading(false);
   };
@@ -44,7 +44,7 @@ export const useComponents = () => {
   const handleSaveComponent = async (values: Component) => {
     if (currentComponent) {
       // Update existing component
-      const updatedComponent = await updateComponent(values);
+      const updatedComponent = await updateComponent(currentComponent.id, values);
       if (updatedComponent) {
         setComponents(prevComponents => 
           prevComponents.map(c => c.id === currentComponent.id ? updatedComponent : c)
