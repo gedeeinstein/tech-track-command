@@ -11,6 +11,8 @@ import { useDialog } from "@/hooks/useDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAssets, createAsset, updateAsset, deleteAsset } from "@/services/assetService";
 import { fetchComponents } from "@/services/componentService";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Assets = () => {
   const queryClient = useQueryClient();
@@ -22,7 +24,7 @@ const Assets = () => {
   const [isFormOpen, setIsFormOpen] = useDialog(false);
 
   // Fetch assets
-  const { data: assets = [], isLoading: isLoadingAssets, isError: isErrorAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets, isError: isErrorAssets, error: assetsError } = useQuery({
     queryKey: ['assets'],
     queryFn: fetchAssets
   });
@@ -130,15 +132,23 @@ const Assets = () => {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  if (isErrorAssets) {
-    return <div className="p-4 text-red-500">Error loading assets. Please try again later.</div>;
-  }
-
   const isLoading = isLoadingAssets || isLoadingComponents;
 
   return (
     <div className="space-y-6">
       <AssetHeader handleAddEdit={() => handleAddEdit()} />
+      
+      {isErrorAssets && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {assetsError instanceof Error 
+              ? assetsError.message 
+              : "Failed to load assets. Please try again later."}
+          </AlertDescription>
+        </Alert>
+      )}
       
       <AssetFilters
         searchQuery={searchQuery}
