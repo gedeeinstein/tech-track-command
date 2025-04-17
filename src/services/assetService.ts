@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Asset } from "@/features/assemblies/types";
 import { toast } from "@/components/ui/use-toast";
@@ -82,11 +81,17 @@ const generateAssetCode = (type: string, departmentId: string | undefined): stri
   return `IT-FA/KPTM/${typePrefix}/${romanMonth}/${year}/${deptCode}/${autoNumber}`;
 };
 
+// Generate a unique ID for assets
+const generateAssetId = (): string => {
+  // Create a unique ID with 'AST' prefix
+  return `AST${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+};
+
 export const fetchAssets = async (): Promise<Asset[]> => {
   try {
     // Using any to bypass TypeScript's type checking
     const { data, error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+      .from("assets")
       .select("*");
 
     if (error) {
@@ -112,17 +117,24 @@ export const createAsset = async (asset: Omit<Asset, "id" | "inventoryNumber">):
     // Generate asset code
     const assetCode = generateAssetCode(asset.type, asset.division);
     
+    // Generate a unique ID for the asset
+    const assetId = generateAssetId();
+    
     const newAsset = {
       ...asset,
+      id: assetId,
       inventoryNumber: assetCode
     };
 
     // Convert to database format
     const dbAsset = assetToDB(newAsset);
 
+    // Log the asset being created for debugging
+    console.log("Creating asset with data:", dbAsset);
+
     // Using any to bypass TypeScript's type checking
     const { data, error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+      .from("assets")
       .insert(dbAsset)
       .select()
       .single();
@@ -156,7 +168,7 @@ export const updateAsset = async (id: string, asset: Partial<Asset>): Promise<As
 
     // Using any to bypass TypeScript's type checking
     const { data, error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+      .from("assets")
       .update(dbAsset)
       .eq("id", id)
       .select()
@@ -188,7 +200,7 @@ export const deleteAsset = async (id: string): Promise<void> => {
   try {
     // Using any to bypass TypeScript's type checking
     const { error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+      .from("assets")
       .delete()
       .eq("id", id);
 
