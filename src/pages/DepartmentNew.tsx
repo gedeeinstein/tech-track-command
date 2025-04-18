@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { DepartmentForm } from '@/components/departments/DepartmentForm';
-import { createDepartment } from '@/services/departmentService';
+import { createDepartment, type Department } from '@/services/departmentService';
 
 const DepartmentNew = () => {
   // Wrapping the createDepartment function to match the expected Promise<void> return type
