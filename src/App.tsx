@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +15,9 @@ import Users from "./pages/Users";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import React from "react";
+import Departments from "./pages/Departments";
+import DepartmentNew from "./pages/DepartmentNew";
+import DepartmentEdit from "./pages/DepartmentEdit";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,9 @@ const App = () => (
               <Route path="/users" element={<Users />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/departments" element={<Departments />} />
+              <Route path="/departments/new" element={<DepartmentNew />} />
+              <Route path="/departments/edit/:id" element={<DepartmentEdit />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

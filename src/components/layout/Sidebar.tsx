@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Component,
+  Building2
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
   { path: "/assemblies", label: "Assemblies", icon: <Server size={20} /> },
   { path: "/maintenance", label: "Maintenance", icon: <CalendarClock size={20} /> },
   { path: "/users", label: "Users", icon: <Users size={20} /> },
+  { path: "/departments", label: "Departments", icon: <Building2 size={20} /> },
   { path: "/reports", label: "Reports", icon: <BarChart size={20} /> },
   { path: "/settings", label: "Settings", icon: <Settings size={20} /> },
 ];
