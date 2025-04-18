@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import { Department } from "./departmentService";
 
 export interface User {
   id: string;
@@ -10,39 +11,48 @@ export interface User {
   role: string;
   status: string;
   lastLogin?: string;
+  department?: Department | null;  // Add optional department
+  departmentId?: string | null;   // Add departmentId for form handling
 }
 
-type UserRow = Database['public']['Tables']['users']['Row'];
+type UserRow = Database['public']['Tables']['users']['Row'] & {
+  departments: {
+    name: string;
+    code: string;
+    description: string | null;
+  } | null;
+};
 
-/**
- * Helper function to convert database row to User
- */
 const mapRowToUser = (row: UserRow): User => ({
   id: row.id,
   name: row.name,
   email: row.email,
   role: row.role,
   status: row.status,
-  lastLogin: row.last_login ? new Date(row.last_login).toLocaleString() : undefined
+  lastLogin: row.last_login ? new Date(row.last_login).toLocaleString() : undefined,
+  department: row.departments ? {
+    id: row.department_id || '',
+    name: row.departments.name,
+    code: row.departments.code,
+    description: row.departments.description
+  } : null,
+  departmentId: row.department_id
 });
 
-/**
- * Fetches all users from the database
- */
 export const getUsers = async (): Promise<User[]> => {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('*');
+      .select(`
+        *,
+        departments!inner(name, code, description)
+      `);
     
     if (error) {
       throw error;
     }
     
-    // Transform data to match User type
-    const users: User[] = data.map(mapRowToUser);
-    
-    return users;
+    return (data as UserRow[]).map(mapRowToUser);
   } catch (error) {
     console.error('Error fetching users:', error);
     toast({
@@ -54,28 +64,27 @@ export const getUsers = async (): Promise<User[]> => {
   }
 };
 
-/**
- * Creates a new user in the database
- */
 export const createUser = async (user: Omit<User, 'id'>): Promise<User | null> => {
   try {
-    // Generate a new ID using a pattern similar to the mock data
     const newId = `U${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
     
-    // Transform the user to match database schema
     const newUser = {
       id: newId,
       name: user.name,
       email: user.email,
       role: user.role,
       status: user.status,
-      last_login: user.lastLogin ? new Date(user.lastLogin).toISOString() : null
+      last_login: user.lastLogin ? new Date(user.lastLogin).toISOString() : null,
+      department_id: user.departmentId
     };
     
     const { data, error } = await supabase
       .from('users')
       .insert([newUser])
-      .select()
+      .select(`
+        *,
+        departments(name, code, description)
+      `)
       .single();
     
     if (error) {
@@ -87,8 +96,7 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User | null> =
       description: `${user.name} has been added successfully.`
     });
     
-    // Transform response to match User type
-    return mapRowToUser(data);
+    return mapRowToUser(data as UserRow);
   } catch (error) {
     console.error('Error creating user:', error);
     toast({
@@ -100,25 +108,26 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User | null> =
   }
 };
 
-/**
- * Updates an existing user in the database
- */
+// Update other methods (updateUser, deleteUser) similarly to include department handling
 export const updateUser = async (user: User): Promise<User | null> => {
   try {
-    // Transform the user to match database schema
     const updateData = {
       name: user.name,
       email: user.email,
       role: user.role,
       status: user.status,
-      last_login: user.lastLogin ? new Date(user.lastLogin).toISOString() : null
+      last_login: user.lastLogin ? new Date(user.lastLogin).toISOString() : null,
+      department_id: user.departmentId
     };
     
     const { data, error } = await supabase
       .from('users')
       .update(updateData)
       .eq('id', user.id)
-      .select()
+      .select(`
+        *,
+        departments(name, code, description)
+      `)
       .single();
     
     if (error) {
@@ -130,8 +139,7 @@ export const updateUser = async (user: User): Promise<User | null> => {
       description: `${user.name} has been updated successfully.`
     });
     
-    // Transform response to match User type
-    return mapRowToUser(data);
+    return mapRowToUser(data as UserRow);
   } catch (error) {
     console.error('Error updating user:', error);
     toast({

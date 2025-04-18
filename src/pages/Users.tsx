@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Table, 
@@ -58,10 +57,10 @@ import {
   Lock
 } from "lucide-react";
 import { getUsers, createUser, updateUser, deleteUser, User as UserType } from "@/services/userService";
+import { fetchDepartments, Department } from "@/services/departmentService";
 import { useForm } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// User roles and their permissions
 const USER_ROLES = [
   { 
     name: "Admin", 
@@ -86,6 +85,7 @@ interface UserFormValues {
   password?: string;
   role: string;
   status: string;
+  departmentId?: string;
 }
 
 const Users: React.FC = () => {
@@ -97,6 +97,7 @@ const Users: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   const form = useForm<UserFormValues>({
     defaultValues: {
@@ -104,18 +105,17 @@ const Users: React.FC = () => {
       email: "",
       password: "",
       role: "Viewer",
-      status: "Active"
+      status: "Active",
+      departmentId: ""
     }
   });
 
-  // Filter users based on search
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Fetch users from database
   const fetchUsers = async () => {
     setIsLoading(true);
     const fetchedUsers = await getUsers();
@@ -124,6 +124,11 @@ const Users: React.FC = () => {
   };
 
   useEffect(() => {
+    const loadDepartments = async () => {
+      const fetchedDepartments = await fetchDepartments();
+      setDepartments(fetchedDepartments);
+    };
+    loadDepartments();
     fetchUsers();
   }, []);
 
@@ -136,7 +141,8 @@ const Users: React.FC = () => {
         name: user.name,
         email: user.email,
         role: user.role,
-        status: user.status
+        status: user.status,
+        departmentId: user.departmentId || ""
       });
     } else {
       form.reset({
@@ -144,7 +150,8 @@ const Users: React.FC = () => {
         email: "",
         password: "",
         role: "Viewer",
-        status: "Active"
+        status: "Active",
+        departmentId: ""
       });
     }
     
@@ -156,25 +163,25 @@ const Users: React.FC = () => {
     
     try {
       if (currentUser) {
-        // Update existing user
         const updatedUser = await updateUser({
           ...currentUser,
           name: values.name,
           email: values.email,
           role: values.role,
-          status: values.status
+          status: values.status,
+          departmentId: values.departmentId
         });
         
         if (updatedUser) {
           setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
         }
       } else {
-        // Create new user
         const newUser = await createUser({
           name: values.name,
           email: values.email,
           role: values.role,
-          status: values.status
+          status: values.status,
+          departmentId: values.departmentId
         });
         
         if (newUser) {
@@ -230,7 +237,6 @@ const Users: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -243,7 +249,6 @@ const Users: React.FC = () => {
         </div>
       </div>
 
-      {/* Users Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -254,6 +259,7 @@ const Users: React.FC = () => {
               <TableHead className="hidden md:table-cell">Status</TableHead>
               <TableHead className="hidden lg:table-cell">Last Login</TableHead>
               <TableHead className="w-[60px]"></TableHead>
+              <TableHead>Department</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -316,7 +322,6 @@ const Users: React.FC = () => {
         </Table>
       </div>
 
-      {/* Add/Edit User Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
@@ -449,6 +454,37 @@ const Users: React.FC = () => {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="departmentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Department</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {departments.map(dept => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{dept.name}</span>
+                              <span className="text-muted-foreground text-xs">({dept.code})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="mt-4 rounded-md bg-muted p-4">
                 <div className="font-medium mb-2">Role Permissions</div>
                 {USER_ROLES.map(role => (
@@ -475,7 +511,6 @@ const Users: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

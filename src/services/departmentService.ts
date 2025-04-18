@@ -5,13 +5,13 @@ import { toast } from "@/components/ui/use-toast";
 export interface Department {
   id: string;
   name: string;
+  code: string;
   description: string | null;
 }
 
 export const fetchDepartments = async (): Promise<Department[]> => {
   try {
-    // Using any to bypass TypeScript's type checking
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("departments")
       .select("*")
       .order("name");
@@ -34,8 +34,7 @@ export const fetchDepartments = async (): Promise<Department[]> => {
 
 export const createDepartment = async (department: Omit<Department, "id">): Promise<Department | null> => {
   try {
-    // Using any to bypass TypeScript's type checking
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("departments")
       .insert(department)
       .select()
@@ -64,8 +63,7 @@ export const createDepartment = async (department: Omit<Department, "id">): Prom
 
 export const updateDepartment = async (id: string, department: Partial<Department>): Promise<Department | null> => {
   try {
-    // Using any to bypass TypeScript's type checking
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("departments")
       .update(department)
       .eq("id", id)
@@ -95,8 +93,7 @@ export const updateDepartment = async (id: string, department: Partial<Departmen
 
 export const deleteDepartment = async (id: string): Promise<boolean> => {
   try {
-    // Using any to bypass TypeScript's type checking
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("departments")
       .delete()
       .eq("id", id);

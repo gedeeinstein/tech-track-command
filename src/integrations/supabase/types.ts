@@ -186,6 +186,30 @@ export type Database = {
         }
         Relationships: []
       }
+      departments: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       maintenance_tasks: {
         Row: {
           assembly_id: string | null
@@ -252,6 +276,7 @@ export type Database = {
       users: {
         Row: {
           created_at: string
+          department_id: string | null
           email: string
           id: string
           last_login: string | null
@@ -261,6 +286,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          department_id?: string | null
           email: string
           id: string
           last_login?: string | null
@@ -270,6 +296,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          department_id?: string | null
           email?: string
           id?: string
           last_login?: string | null
@@ -277,7 +304,15 @@ export type Database = {
           role?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
