@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Asset } from "@/features/assemblies/types";
 import { toast } from "@/components/ui/use-toast";
@@ -115,6 +116,8 @@ export const fetchAssets = async (): Promise<Asset[]> => {
 
 export const fetchDepartmentCode = async (departmentId: string): Promise<string> => {
   try {
+    console.log("Fetching department code for department ID:", departmentId);
+    
     const { data, error } = await supabase
       .from("departments")
       .select("code")
@@ -126,7 +129,15 @@ export const fetchDepartmentCode = async (departmentId: string): Promise<string>
       throw error;
     }
 
-    return data?.code || "GEN";
+    console.log("Department data retrieved:", data);
+    
+    if (!data || !data.code) {
+      console.warn("No department code found, using default GEN");
+      return "GEN"; // Default fallback code
+    }
+    
+    console.log("Using department code:", data.code);
+    return data.code;
   } catch (error) {
     console.error("Error in fetchDepartmentCode:", error);
     toast({
@@ -140,11 +151,15 @@ export const fetchDepartmentCode = async (departmentId: string): Promise<string>
 
 export const createAsset = async (asset: Omit<Asset, "id" | "inventoryNumber">): Promise<Asset> => {
   try {
+    console.log("Creating asset with division:", asset.division);
+    
     // Get department code for the inventory number
     const departmentCode = await fetchDepartmentCode(asset.division);
+    console.log("Retrieved department code:", departmentCode);
     
     // Generate asset code using the full year and department code
     const assetCode = await generateInventoryNumber(asset.type, departmentCode);
+    console.log("Generated inventory number:", assetCode);
     
     // Generate a unique ID for the asset
     const assetId = `AST${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
