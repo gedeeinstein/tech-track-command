@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Asset } from "@/features/assemblies/types";
 import { toast } from "@/components/ui/use-toast";
+import { generateInventoryNumber } from "@/features/assets/utils/inventoryGenerator";
 
 // Helper function to convert snake_case database object to camelCase Asset
 const dbToAsset = (dbAsset: any): Asset => {
@@ -112,13 +113,41 @@ export const fetchAssets = async (): Promise<Asset[]> => {
   }
 };
 
+export const fetchDepartmentCode = async (departmentId: string): Promise<string> => {
+  try {
+    const { data, error } = await supabase
+      .from("departments")
+      .select("code")
+      .eq("id", departmentId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching department code:", error);
+      throw error;
+    }
+
+    return data?.code || "GEN";
+  } catch (error) {
+    console.error("Error in fetchDepartmentCode:", error);
+    toast({
+      title: "Error fetching department code",
+      description: error instanceof Error ? error.message : "An unknown error occurred",
+      variant: "destructive"
+    });
+    return "GEN"; // Default fallback code
+  }
+};
+
 export const createAsset = async (asset: Omit<Asset, "id" | "inventoryNumber">): Promise<Asset> => {
   try {
-    // Generate asset code
-    const assetCode = generateAssetCode(asset.type, asset.division);
+    // Get department code for the inventory number
+    const departmentCode = await fetchDepartmentCode(asset.division);
+    
+    // Generate asset code using the full year and department code
+    const assetCode = await generateInventoryNumber(asset.type, departmentCode);
     
     // Generate a unique ID for the asset
-    const assetId = generateAssetId();
+    const assetId = `AST${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
     
     const newAsset = {
       ...asset,
@@ -129,11 +158,7 @@ export const createAsset = async (asset: Omit<Asset, "id" | "inventoryNumber">):
     // Convert to database format
     const dbAsset = assetToDB(newAsset);
 
-    // Log the asset being created for debugging
-    console.log("Creating asset with data:", dbAsset);
-
-    // Using any to bypass TypeScript's type checking
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("assets")
       .insert(dbAsset)
       .select()
