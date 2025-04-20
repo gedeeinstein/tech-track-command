@@ -1,3 +1,4 @@
+
 const ROMAN_MONTHS: Record<number, string> = {
   1: "I",
   2: "II",
@@ -19,8 +20,8 @@ const ROMAN_MONTHS: Record<number, string> = {
  */
 export const generateInventoryNumber = async (
   assetType: string,
-  departmentCode: string,
-): string => {
+  departmentCode: string
+): Promise<string> => {
   const date = new Date();
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
