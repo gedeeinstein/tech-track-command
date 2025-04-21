@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,45 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
   onSave,
   assets
 }) => {
+  // State to track form values across tab changes
+  const [formValues, setFormValues] = useState({
+    name: currentAssembly?.name || "",
+    description: currentAssembly?.description || "",
+    status: currentAssembly?.status || "Active",
+    location: currentAssembly?.location || "",
+    lastMaintenance: currentAssembly?.lastMaintenance || "",
+    nextMaintenance: currentAssembly?.nextMaintenance || ""
+  });
+
+  // Update form values when currentAssembly changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      setFormValues({
+        name: currentAssembly?.name || "",
+        description: currentAssembly?.description || "",
+        status: currentAssembly?.status || "Active",
+        location: currentAssembly?.location || "",
+        lastMaintenance: currentAssembly?.lastMaintenance || "",
+        nextMaintenance: currentAssembly?.nextMaintenance || ""
+      });
+    }
+  }, [currentAssembly, open]);
+
+  // Handle form field changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormValues(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Wrap onSave to include formValues
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(e);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
@@ -52,7 +91,7 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
               : "Enter the details of the new assembly."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSave} id="assembly-form">
+        <form onSubmit={handleSubmit} id="assembly-form">
           <Tabs defaultValue="details">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="details">Details</TabsTrigger>
@@ -65,7 +104,8 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                   <Input
                     id="name"
                     name="name"
-                    defaultValue={currentAssembly?.name || ""}
+                    value={formValues.name}
+                    onChange={handleInputChange}
                     placeholder="Enter assembly name"
                     required
                   />
@@ -75,7 +115,8 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                   <Textarea
                     id="description"
                     name="description"
-                    defaultValue={currentAssembly?.description || ""}
+                    value={formValues.description}
+                    onChange={handleInputChange}
                     placeholder="Describe the assembly and its purpose"
                     required
                   />
@@ -86,7 +127,8 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                     <select
                       id="status"
                       name="status"
-                      defaultValue={currentAssembly?.status || "Active"}
+                      value={formValues.status}
+                      onChange={handleInputChange}
                       className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
                     >
                       <option value="Active">Active</option>
@@ -99,7 +141,8 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                     <Input
                       id="location"
                       name="location"
-                      defaultValue={currentAssembly?.location || ""}
+                      value={formValues.location}
+                      onChange={handleInputChange}
                       placeholder="Location"
                       required
                     />
@@ -112,7 +155,8 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                       id="lastMaintenance"
                       name="lastMaintenance"
                       type="date"
-                      defaultValue={currentAssembly?.lastMaintenance || ""}
+                      value={formValues.lastMaintenance}
+                      onChange={handleInputChange}
                       required
                     />
                   </div>
@@ -122,7 +166,8 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                       id="nextMaintenance"
                       name="nextMaintenance"
                       type="date"
-                      defaultValue={currentAssembly?.nextMaintenance || ""}
+                      value={formValues.nextMaintenance}
+                      onChange={handleInputChange}
                       required
                     />
                   </div>
@@ -184,31 +229,37 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                   </div>
                 )}
               </div>
-              {/* Add hidden input fields to ensure form submission works from Components tab */}
+              {/* Add hidden input fields with controlled values to ensure form submission works from Components tab */}
               <div className="hidden">
                 <input 
                   name="name" 
-                  defaultValue={currentAssembly?.name || ""} 
+                  value={formValues.name}
+                  onChange={handleInputChange}
                 />
                 <input 
                   name="description" 
-                  defaultValue={currentAssembly?.description || ""} 
+                  value={formValues.description}
+                  onChange={handleInputChange}
                 />
                 <input 
                   name="status" 
-                  defaultValue={currentAssembly?.status || "Active"} 
+                  value={formValues.status}
+                  onChange={handleInputChange}
                 />
                 <input 
                   name="location" 
-                  defaultValue={currentAssembly?.location || ""} 
+                  value={formValues.location}
+                  onChange={handleInputChange}
                 />
                 <input 
                   name="lastMaintenance" 
-                  defaultValue={currentAssembly?.lastMaintenance || ""} 
+                  value={formValues.lastMaintenance}
+                  onChange={handleInputChange}
                 />
                 <input 
                   name="nextMaintenance" 
-                  defaultValue={currentAssembly?.nextMaintenance || ""} 
+                  value={formValues.nextMaintenance}
+                  onChange={handleInputChange}
                 />
               </div>
             </TabsContent>

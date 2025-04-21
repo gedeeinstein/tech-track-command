@@ -10,6 +10,7 @@ import { ViewMode, Assembly } from "@/features/assemblies/types";
 import { useDialog } from "@/hooks/useDialog";
 import { AssemblyDetailsDialog } from "@/features/assemblies/components/AssemblyDetailsDialog";
 import { useAssemblies } from "@/features/assemblies/hooks/useAssemblies";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Assemblies Page
@@ -23,6 +24,7 @@ const Assemblies = () => {
     create,
     update,
     remove,
+    loading
   } = useAssemblies();
 
   const [currentAssembly, setCurrentAssembly] = useState<Assembly | null>(null);
@@ -57,22 +59,54 @@ const Assemblies = () => {
   // Save handler for form dialog
   const handleSaveAssembly = async (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const name = (form.elements.namedItem("name") as HTMLInputElement).value;
-    const description = (form.elements.namedItem("description") as HTMLTextAreaElement).value;
-    const status = (form.elements.namedItem("status") as HTMLSelectElement).value as Assembly["status"];
-    const location = (form.elements.namedItem("location") as HTMLInputElement).value;
-    const lastMaintenance = (form.elements.namedItem("lastMaintenance") as HTMLInputElement).value;
-    const nextMaintenance = (form.elements.namedItem("nextMaintenance") as HTMLInputElement).value;
+    try {
+      const form = e.target as HTMLFormElement;
+      const name = (form.elements.namedItem("name") as HTMLInputElement).value;
+      const description = (form.elements.namedItem("description") as HTMLTextAreaElement).value;
+      const status = (form.elements.namedItem("status") as HTMLSelectElement).value as Assembly["status"];
+      const location = (form.elements.namedItem("location") as HTMLInputElement).value;
+      const lastMaintenance = (form.elements.namedItem("lastMaintenance") as HTMLInputElement).value;
+      const nextMaintenance = (form.elements.namedItem("nextMaintenance") as HTMLInputElement).value;
 
-    const base = { name, description, status, location, lastMaintenance, nextMaintenance };
+      if (!name || !description || !location) {
+        toast({
+          title: "Missing required fields",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    if (currentAssembly) {
-      const updated = await update(currentAssembly.id, base, selectedComponents);
-      if (updated) setIsFormOpen(false);
-    } else {
-      const created = await create(base, selectedComponents);
-      if (created) setIsFormOpen(false);
+      const base = { name, description, status, location, lastMaintenance, nextMaintenance };
+      
+      console.log("Form data:", base, "Selected components:", selectedComponents);
+
+      if (currentAssembly) {
+        const updated = await update(currentAssembly.id, base, selectedComponents);
+        if (updated) {
+          setIsFormOpen(false);
+          toast({
+            title: "Assembly updated",
+            description: `${name} has been updated successfully.`
+          });
+        }
+      } else {
+        const created = await create(base, selectedComponents);
+        if (created) {
+          setIsFormOpen(false);
+          toast({
+            title: "Assembly created",
+            description: `${name} has been created successfully.`
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error saving assembly:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An error occurred while saving the assembly",
+        variant: "destructive"
+      });
     }
   };
 
@@ -94,7 +128,11 @@ const Assemblies = () => {
         onViewModeChange={setViewMode}
       />
 
-      {viewMode === "grid" ? (
+      {loading ? (
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : viewMode === "grid" ? (
         <AssemblyGrid
           assemblies={filteredAssemblies}
           onEdit={handleOpenAssemblyForm}
@@ -116,11 +154,7 @@ const Assemblies = () => {
           setIsFormOpen(open);
           if (!open) document.body.style.removeProperty('pointer-events');
         }}
-        currentAssembly={
-          currentAssembly
-            ? { ...currentAssembly, components: getComponentObjects(selectedComponents) }
-            : null
-        }
+        currentAssembly={currentAssembly}
         selectedComponents={selectedComponents}
         onComponentSelect={handleComponentSelection}
         onOpenComponentDialog={() => setIsComponentDialogOpen(true)}
