@@ -184,6 +184,33 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                   </div>
                 )}
               </div>
+              {/* Add hidden input fields to ensure form submission works from Components tab */}
+              <div className="hidden">
+                <input 
+                  name="name" 
+                  defaultValue={currentAssembly?.name || ""} 
+                />
+                <input 
+                  name="description" 
+                  defaultValue={currentAssembly?.description || ""} 
+                />
+                <input 
+                  name="status" 
+                  defaultValue={currentAssembly?.status || "Active"} 
+                />
+                <input 
+                  name="location" 
+                  defaultValue={currentAssembly?.location || ""} 
+                />
+                <input 
+                  name="lastMaintenance" 
+                  defaultValue={currentAssembly?.lastMaintenance || ""} 
+                />
+                <input 
+                  name="nextMaintenance" 
+                  defaultValue={currentAssembly?.nextMaintenance || ""} 
+                />
+              </div>
             </TabsContent>
           </Tabs>
           <DialogFooter className="mt-6">

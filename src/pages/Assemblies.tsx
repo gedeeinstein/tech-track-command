@@ -15,6 +15,7 @@ import {
   updateAssembly,
   deleteAssembly,
 } from "@/services/assemblyService";
+import { getComponentIcon } from "@/features/assemblies/utils/componentIcons";
 
 // To get asset names/types for the components field in dialog, a fetchAssets util is needed
 import { fetchAssets } from "@/services/assetService";
