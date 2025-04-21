@@ -1,107 +1,111 @@
 
 import React from "react";
-import { 
-  Card, 
+import {
+  Card,
   CardContent,
   CardDescription,
   CardFooter,
-  CardHeader, 
-  CardTitle 
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Eye, Trash2 } from "lucide-react";
 import { Assembly } from "../types";
-import { getComponentIcon } from "../utils/componentIcons";
 
 interface AssemblyGridProps {
   assemblies: Assembly[];
   onEdit: (assembly: Assembly) => void;
   onDelete: (id: string) => void;
+  onViewDetails: (assembly: Assembly) => void;
 }
 
-export const AssemblyGrid: React.FC<AssemblyGridProps> = ({ 
-  assemblies, 
-  onEdit, 
-  onDelete 
+export const AssemblyGrid: React.FC<AssemblyGridProps> = ({
+  assemblies,
+  onEdit,
+  onDelete,
+  onViewDetails
 }) => {
-  if (assemblies.length === 0) {
-    return (
-      <div className="col-span-full text-center py-10">
-        <p className="text-muted-foreground">No assemblies found.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {assemblies.map((assembly) => (
-        <Card key={assembly.id} className="flex flex-col">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <CardTitle>{assembly.name}</CardTitle>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(assembly)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onClick={() => onDelete(assembly.id)}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <div className="flex items-center mt-1">
-              <span className={cn(
-                "status-badge",
-                assembly.status === "Active" && "status-active",
-                assembly.status === "Maintenance" && "status-maintenance",
-                assembly.status === "Decommissioned" && "status-decommissioned"
-              )}>
-                {assembly.status}
-              </span>
-            </div>
-            <CardDescription className="pt-1">{assembly.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <div className="text-sm">
-              <div className="font-medium mb-2">Components ({assembly.components.length})</div>
-              <ul className="space-y-2">
-                {assembly.components.slice(0, 3).map((component, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    {getComponentIcon(component.type)}
-                    <span className="truncate">{component.name}</span>
-                  </li>
-                ))}
-                {assembly.components.length > 3 && (
-                  <li className="text-muted-foreground text-xs">
-                    + {assembly.components.length - 3} more components
-                  </li>
-                )}
-              </ul>
-            </div>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground border-t pt-3">
-            <div className="w-full flex justify-between">
-              <span>Location: {assembly.location}</span>
-              <span>Next Maintenance: {assembly.nextMaintenance}</span>
-            </div>
-          </CardFooter>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {assemblies.length > 0 ? (
+        assemblies.map((assembly) => (
+          <Card key={assembly.id}>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg">{assembly.name}</CardTitle>
+                <Badge
+                  variant={
+                    assembly.status === "Active"
+                      ? "default"
+                      : assembly.status === "Maintenance"
+                      ? "secondary"
+                      : "destructive"
+                  }
+                >
+                  {assembly.status}
+                </Badge>
+              </div>
+              <CardDescription className="line-clamp-2">
+                {assembly.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-2">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <div className="font-medium">Location</div>
+                  <div>{assembly.location}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Components</div>
+                  <div>{assembly.components.length} items</div>
+                </div>
+                <div>
+                  <div className="font-medium">Last Maintenance</div>
+                  <div>{assembly.lastMaintenance}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Next Maintenance</div>
+                  <div>{assembly.nextMaintenance}</div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => onViewDetails(assembly)}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Details
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => onEdit(assembly)}
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => onDelete(assembly.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            </CardFooter>
+          </Card>
+        ))
+      ) : (
+        <div className="col-span-full text-center p-8 bg-muted rounded-lg text-muted-foreground">
+          No assemblies found.
+        </div>
+      )}
     </div>
   );
 };

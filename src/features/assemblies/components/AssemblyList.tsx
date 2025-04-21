@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
+import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Assembly } from "../types";
 
@@ -15,12 +15,14 @@ interface AssemblyListProps {
   assemblies: Assembly[];
   onEdit: (assembly: Assembly) => void;
   onDelete: (id: string) => void;
+  onViewDetails: (assembly: Assembly) => void;
 }
 
 export const AssemblyList: React.FC<AssemblyListProps> = ({ 
   assemblies, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onViewDetails
 }) => {
   return (
     <div className="rounded-md border">
@@ -32,7 +34,7 @@ export const AssemblyList: React.FC<AssemblyListProps> = ({
             <th className="text-left p-3 font-medium hidden md:table-cell">Location</th>
             <th className="text-left p-3 font-medium hidden lg:table-cell">Components</th>
             <th className="text-left p-3 font-medium hidden lg:table-cell">Next Maintenance</th>
-            <th className="p-3 w-[60px]"></th>
+            <th className="p-3 w-[120px]"></th>
           </tr>
         </thead>
         <tbody>
@@ -45,10 +47,10 @@ export const AssemblyList: React.FC<AssemblyListProps> = ({
                 </td>
                 <td className="p-3 hidden md:table-cell">
                   <span className={cn(
-                    "status-badge",
-                    assembly.status === "Active" && "status-active",
-                    assembly.status === "Maintenance" && "status-maintenance",
-                    assembly.status === "Decommissioned" && "status-decommissioned"
+                    "inline-flex px-2 py-1 rounded-full text-xs",
+                    assembly.status === "Active" && "bg-green-100 text-green-800",
+                    assembly.status === "Maintenance" && "bg-yellow-100 text-yellow-800",
+                    assembly.status === "Decommissioned" && "bg-red-100 text-red-800"
                   )}>
                     {assembly.status}
                   </span>
@@ -57,23 +59,33 @@ export const AssemblyList: React.FC<AssemblyListProps> = ({
                 <td className="p-3 hidden lg:table-cell">{assembly.components.length}</td>
                 <td className="p-3 hidden lg:table-cell">{assembly.nextMaintenance}</td>
                 <td className="p-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(assembly)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => onDelete(assembly.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onViewDetails(assembly)}
+                      title="View Details"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onEdit(assembly)}
+                      title="Edit"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onDelete(assembly.id)}
+                      title="Delete"
+                      className="text-destructive hover:text-destructive/90"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))

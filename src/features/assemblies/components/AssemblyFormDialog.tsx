@@ -15,8 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Assembly } from "../types";
 import { getComponentIcon } from "../utils/componentIcons";
-import { AVAILABLE_COMPONENTS } from "../data/mock-data";
 import { Trash2 } from "lucide-react";
+import { Asset } from "../types";
 
 interface AssemblyFormDialogProps {
   open: boolean;
@@ -26,6 +26,7 @@ interface AssemblyFormDialogProps {
   onComponentSelect: (componentId: string) => void;
   onOpenComponentDialog: () => void;
   onSave: (e: React.FormEvent) => void;
+  assets: Asset[];
 }
 
 export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
@@ -35,7 +36,8 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
   selectedComponents,
   onComponentSelect,
   onOpenComponentDialog,
-  onSave
+  onSave,
+  assets
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,7 +52,7 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
               : "Enter the details of the new assembly."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSave}>
+        <form onSubmit={onSave} id="assembly-form">
           <Tabs defaultValue="details">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="details">Details</TabsTrigger>
@@ -62,16 +64,20 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                   <Label htmlFor="name">Assembly Name</Label>
                   <Input
                     id="name"
+                    name="name"
                     defaultValue={currentAssembly?.name || ""}
                     placeholder="Enter assembly name"
+                    required
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
+                    name="description"
                     defaultValue={currentAssembly?.description || ""}
                     placeholder="Describe the assembly and its purpose"
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -79,6 +85,7 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                     <Label htmlFor="status">Status</Label>
                     <select
                       id="status"
+                      name="status"
                       defaultValue={currentAssembly?.status || "Active"}
                       className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm"
                     >
@@ -91,8 +98,10 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                     <Label htmlFor="location">Location</Label>
                     <Input
                       id="location"
+                      name="location"
                       defaultValue={currentAssembly?.location || ""}
                       placeholder="Location"
+                      required
                     />
                   </div>
                 </div>
@@ -101,16 +110,20 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                     <Label htmlFor="lastMaintenance">Last Maintenance</Label>
                     <Input
                       id="lastMaintenance"
+                      name="lastMaintenance"
                       type="date"
                       defaultValue={currentAssembly?.lastMaintenance || ""}
+                      required
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="nextMaintenance">Next Maintenance</Label>
                     <Input
                       id="nextMaintenance"
+                      name="nextMaintenance"
                       type="date"
                       defaultValue={currentAssembly?.nextMaintenance || ""}
+                      required
                     />
                   </div>
                 </div>
@@ -136,22 +149,20 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
               <div className="border rounded-md divide-y max-h-[300px] overflow-y-auto">
                 {selectedComponents.length > 0 ? (
                   selectedComponents.map((compId) => {
-                    const component = AVAILABLE_COMPONENTS.find(
-                      (c) => c.id === compId
-                    );
-                    return component ? (
+                    const asset = assets.find(a => a.id === compId);
+                    return asset ? (
                       <div
-                        key={component.id}
+                        key={asset.id}
                         className="p-3 flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
-                          {getComponentIcon(component.type)}
+                          {getComponentIcon(asset.type)}
                           <div>
                             <div className="font-medium text-sm">
-                              {component.name}
+                              {asset.name}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {component.type} • {component.id}
+                              {asset.type} • {asset.id}
                             </div>
                           </div>
                         </div>
@@ -159,7 +170,7 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => onComponentSelect(component.id)}
+                          onClick={() => onComponentSelect(asset.id)}
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -176,7 +187,7 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
             </TabsContent>
           </Tabs>
           <DialogFooter className="mt-6">
-            <Button type="submit">
+            <Button type="submit" form="assembly-form">
               {currentAssembly ? "Update Assembly" : "Create Assembly"}
             </Button>
           </DialogFooter>
