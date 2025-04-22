@@ -37,29 +37,46 @@ export function useAssemblies() {
   function getComponentObjects(ids: string[]) {
     return ids.map(id => {
       const asset = assets.find(a => a.id === id);
-      return { id, name: asset ? asset.name : `Component ${id}`, type: asset ? asset.type : "Unknown" };
+      if (!asset) {
+        console.log(`Asset not found for ID: ${id}`);
+      }
+      return { 
+        id, 
+        name: asset ? asset.name : `Component ${id}`, 
+        type: asset ? asset.type : "Unknown" 
+      };
     });
   }
 
   const create = async (assemblyInput, selectedComponents) => {
-    const created = await createAssembly({ ...assemblyInput, components: selectedComponents });
-    if (created) {
-      setAssemblies(prev => [
-        ...prev,
-        { ...created, components: getComponentObjects(selectedComponents) }
-      ]);
+    try {
+      const created = await createAssembly({ ...assemblyInput, components: selectedComponents });
+      if (created) {
+        setAssemblies(prev => [
+          ...prev,
+          { ...created, components: getComponentObjects(selectedComponents) }
+        ]);
+      }
+      return created;
+    } catch (error) {
+      console.error("Error creating assembly:", error);
+      return null;
     }
-    return created;
   };
 
   const update = async (id, assemblyInput, selectedComponents) => {
-    const updated = await updateAssembly(id, { ...assemblyInput, components: selectedComponents });
-    if (updated) {
-      setAssemblies(prev =>
-        prev.map(a => a.id === id ? { ...updated, components: getComponentObjects(selectedComponents) } : a)
-      );
+    try {
+      const updated = await updateAssembly(id, { ...assemblyInput, components: selectedComponents });
+      if (updated) {
+        setAssemblies(prev =>
+          prev.map(a => a.id === id ? { ...updated, components: getComponentObjects(selectedComponents) } : a)
+        );
+      }
+      return updated;
+    } catch (error) {
+      console.error("Error updating assembly:", error);
+      return null;
     }
-    return updated;
   };
 
   const remove = async (id: string) => {

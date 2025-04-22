@@ -39,22 +39,47 @@ export async function fetchAssemblies(): Promise<Assembly[]> {
       .select("*");
 
     if (linkError) {
-      console.error("Error fetching assembly_assets:", linkError);
+      console.error("Error fetching assembly_assets links:", linkError);
       throw linkError;
     }
 
     console.log("Fetched assembly_assets links:", links);
+    
+    // Fetch all assets to get their details
+    const { data: assets, error: assetError } = await supabase
+      .from("assets")
+      .select("*");
+      
+    if (assetError) {
+      console.error("Error fetching assets:", assetError);
+      throw assetError;
+    }
+    
+    console.log("Fetched assets for components:", assets);
 
-    // assemble component id lists
-    const assemblyMap: Record<string, string[]> = {};
+    // assemble component id lists with proper details
+    const assemblyMap: Record<string, Array<{id: string, name: string, type: string}>> = {};
     (links || []).forEach(link => {
       if (!assemblyMap[link.assembly_id]) assemblyMap[link.assembly_id] = [];
-      assemblyMap[link.assembly_id].push(link.asset_id);
+      
+      // Find the asset details
+      const asset = assets?.find(a => a.id === link.asset_id);
+      
+      assemblyMap[link.assembly_id].push({
+        id: link.asset_id,
+        name: asset ? asset.name : `Component ${link.asset_id}`,
+        type: asset ? asset.type : "Unknown"
+      });
     });
 
-    console.log("Assembled component map:", assemblyMap);
+    console.log("Assembled component map with details:", assemblyMap);
 
-    return (assemblies || []).map(a => dbToAssembly(a, assemblyMap[a.id] || []));
+    return (assemblies || []).map(a => {
+      const result = dbToAssembly(a, []);
+      // Replace the empty components array with the detailed components
+      result.components = assemblyMap[a.id] || [];
+      return result;
+    });
   } catch (error) {
     console.error("Error in fetchAssemblies:", error);
     toast({
