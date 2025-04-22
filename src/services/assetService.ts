@@ -1,265 +1,171 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Asset } from "@/features/assemblies/types";
-import { toast } from "@/components/ui/use-toast";
-import { generateInventoryNumber } from "@/features/assets/utils/inventoryGenerator";
+import { toast } from "@/hooks/use-toast";
 
-// Helper function to convert snake_case database object to camelCase Asset
-const dbToAsset = (dbAsset: any): Asset => {
-  return {
-    id: dbAsset.id,
-    inventoryNumber: dbAsset.inventory_number,
-    name: dbAsset.name,
-    type: dbAsset.type,
-    status: dbAsset.status,
-    location: dbAsset.location || "",
-    assignedTo: dbAsset.assigned_to || "",
-    purchaseDate: dbAsset.purchase_date ? dbAsset.purchase_date : "",
-    warranty: dbAsset.warranty ? dbAsset.warranty : "",
-    operatingSystem: dbAsset.operating_system,
-    user: dbAsset.user_account,
-    processor: dbAsset.processor,
-    motherboard: dbAsset.motherboard,
-    ram: dbAsset.ram,
-    storage: dbAsset.storage,
-    monitor: dbAsset.monitor,
-    peripherals: dbAsset.peripherals || [],
-    expansionCards: dbAsset.expansion_cards || [],
-    accessories: dbAsset.accessories || [],
-    division: dbAsset.division,
-    windowsLicense: dbAsset.windows_license,
-    hostname: dbAsset.hostname
-  };
-};
+export interface Asset {
+  id: string;
+  inventory_number: string;
+  name: string;
+  type: string;
+  status: string;
+  location: string;
+  assigned_to: string;
+  purchase_date: string;
+  warranty: string;
+  operating_system?: string;
+  user_account?: string;
+  processor?: string;
+  motherboard?: string;
+  ram?: string;
+  storage?: string;
+  monitor?: string;
+  peripherals?: string[];
+  expansion_cards?: string[];
+  accessories?: string[];
+  division?: string;
+  windows_license?: string;
+  hostname?: string;
+  created_at?: string;
+}
 
-// Helper function to convert camelCase Asset to snake_case database object
-const assetToDB = (asset: Partial<Asset>): any => {
-  const dbAsset: any = {};
-  
-  if (asset.id !== undefined) dbAsset.id = asset.id;
-  if (asset.inventoryNumber !== undefined) dbAsset.inventory_number = asset.inventoryNumber;
-  if (asset.name !== undefined) dbAsset.name = asset.name;
-  if (asset.type !== undefined) dbAsset.type = asset.type;
-  if (asset.status !== undefined) dbAsset.status = asset.status;
-  if (asset.location !== undefined) dbAsset.location = asset.location;
-  if (asset.assignedTo !== undefined) dbAsset.assigned_to = asset.assignedTo;
-  if (asset.purchaseDate !== undefined) dbAsset.purchase_date = asset.purchaseDate;
-  if (asset.warranty !== undefined) dbAsset.warranty = asset.warranty;
-  if (asset.operatingSystem !== undefined) dbAsset.operating_system = asset.operatingSystem;
-  if (asset.user !== undefined) dbAsset.user_account = asset.user;
-  if (asset.processor !== undefined) dbAsset.processor = asset.processor;
-  if (asset.motherboard !== undefined) dbAsset.motherboard = asset.motherboard;
-  if (asset.ram !== undefined) dbAsset.ram = asset.ram;
-  if (asset.storage !== undefined) dbAsset.storage = asset.storage;
-  if (asset.monitor !== undefined) dbAsset.monitor = asset.monitor;
-  if (asset.peripherals !== undefined) dbAsset.peripherals = asset.peripherals;
-  if (asset.expansionCards !== undefined) dbAsset.expansion_cards = asset.expansionCards;
-  if (asset.accessories !== undefined) dbAsset.accessories = asset.accessories;
-  if (asset.division !== undefined) dbAsset.division = asset.division;
-  if (asset.windowsLicense !== undefined) dbAsset.windows_license = asset.windowsLicense;
-  if (asset.hostname !== undefined) dbAsset.hostname = asset.hostname;
-  
-  return dbAsset;
-};
-
-// Generate an asset code in the format IT-FA/KPTM/{Type}/{Roman Month}/{Year}/{Dept}/{Auto}
-const generateAssetCode = (type: string, departmentId: string | undefined): string => {
-  const now = new Date();
-  const year = now.getFullYear().toString().slice(-2);
-  
-  // Convert month to Roman numerals (simplified)
-  const romanMonths = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-  const romanMonth = romanMonths[now.getMonth()];
-  
-  // Get first 2 characters of type or "OT" for Other
-  const typePrefix = type.length > 2 ? type.substring(0, 2).toUpperCase() : "OT";
-  
-  // Department code (using last 3 characters of UUID or "GEN" if not available)
-  const deptCode = departmentId ? departmentId.slice(-3).toUpperCase() : "GEN";
-  
-  // Auto-increment number (using timestamp for uniqueness)
-  const autoNumber = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  
-  return `IT-FA/KPTM/${typePrefix}/${romanMonth}/${year}/${deptCode}/${autoNumber}`;
-};
-
-// Generate a unique ID for assets
-const generateAssetId = (): string => {
-  // Create a unique ID with 'AST' prefix
-  return `AST${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-};
-
-export const fetchAssets = async (): Promise<Asset[]> => {
+/**
+ * Fetches all assets from the database
+ */
+export const getAssets = async (): Promise<Asset[]> => {
   try {
-    // Using any to bypass TypeScript's type checking
-    const { data, error } = await (supabase as any)
-      .from("assets")
-      .select("*");
-
-    if (error) {
-      console.error("Error fetching assets:", error);
-      throw error;
-    }
-
-    // Convert each database asset object to our Asset type
-    return (data || []).map(dbToAsset);
+    const { data: assets, error } = await supabase
+      .from('assets')
+      .select('*');
+    
+    if (error) throw error;
+    
+    return assets || [];
   } catch (error) {
-    console.error("Error in fetchAssets:", error);
+    console.error('Error fetching assets:', error);
     toast({
       title: "Error fetching assets",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
+      description: error instanceof Error ? error.message : "Unknown error occurred",
       variant: "destructive"
     });
     return [];
   }
 };
 
-export const fetchDepartmentCode = async (departmentId: string): Promise<string> => {
+/**
+ * Creates a new asset in the database
+ */
+export const createAsset = async (asset: Omit<Asset, 'id'>): Promise<Asset | null> => {
   try {
-    console.log("Fetching department code for department ID:", departmentId);
+    // Generate a UUID for the new asset
+    const id = crypto.randomUUID();
     
     const { data, error } = await supabase
-      .from("departments")
-      .select("code")
-      .eq("id", departmentId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching department code:", error);
-      throw error;
-    }
-
-    console.log("Department data retrieved:", data);
-    
-    if (!data || !data.code) {
-      console.warn("No department code found, using default GEN");
-      return "GEN"; // Default fallback code
-    }
-    
-    console.log("Using department code:", data.code);
-    return data.code;
-  } catch (error) {
-    console.error("Error in fetchDepartmentCode:", error);
-    toast({
-      title: "Error fetching department code",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
-      variant: "destructive"
-    });
-    return "GEN"; // Default fallback code
-  }
-};
-
-export const createAsset = async (asset: Omit<Asset, "id" | "inventoryNumber">): Promise<Asset> => {
-  try {
-    console.log("Creating asset with division:", asset.division);
-    
-    // Get department code for the inventory number
-    const departmentCode = await fetchDepartmentCode(asset.division);
-    console.log("Retrieved department code:", departmentCode);
-    
-    // Generate asset code using the full year and department code
-    const assetCode = await generateInventoryNumber(asset.type, departmentCode);
-    console.log("Generated inventory number:", assetCode);
-    
-    // Generate a unique ID for the asset
-    const assetId = `AST${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    
-    const newAsset = {
-      ...asset,
-      id: assetId,
-      inventoryNumber: assetCode
-    };
-
-    // Convert to database format
-    const dbAsset = assetToDB(newAsset);
-
-    const { data, error } = await supabase
-      .from("assets")
-      .insert(dbAsset)
+      .from('assets')
+      .insert({
+        id,
+        ...asset
+      })
       .select()
       .single();
-
-    if (error) {
-      console.error("Error creating asset:", error);
-      throw error;
-    }
-
+    
+    if (error) throw error;
+    
     toast({
       title: "Asset created",
-      description: `${newAsset.name} has been added to inventory.`
+      description: `${asset.name} has been added successfully.`
     });
-
-    return dbToAsset(data);
+    
+    return data;
   } catch (error) {
-    console.error("Error in createAsset:", error);
+    console.error('Error creating asset:', error);
     toast({
       title: "Error creating asset",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
+      description: error instanceof Error ? error.message : "Unknown error occurred",
       variant: "destructive"
     });
-    throw error;
+    return null;
   }
 };
 
-export const updateAsset = async (id: string, asset: Partial<Asset>): Promise<Asset> => {
+/**
+ * Updates an existing asset in the database
+ */
+export const updateAsset = async (asset: Asset): Promise<Asset | null> => {
   try {
-    // Convert to database format
-    const dbAsset = assetToDB(asset);
-
-    // Using any to bypass TypeScript's type checking
-    const { data, error } = await (supabase as any)
-      .from("assets")
-      .update(dbAsset)
-      .eq("id", id)
+    // Remove the updated_at field since it doesn't exist in the database schema
+    const { data, error } = await supabase
+      .from('assets')
+      .update({
+        name: asset.name,
+        inventory_number: asset.inventory_number,
+        type: asset.type,
+        status: asset.status,
+        location: asset.location,
+        assigned_to: asset.assigned_to,
+        purchase_date: asset.purchase_date,
+        warranty: asset.warranty,
+        operating_system: asset.operating_system,
+        user_account: asset.user_account,
+        processor: asset.processor,
+        motherboard: asset.motherboard,
+        ram: asset.ram,
+        storage: asset.storage,
+        monitor: asset.monitor,
+        peripherals: asset.peripherals,
+        expansion_cards: asset.expansion_cards,
+        accessories: asset.accessories,
+        division: asset.division,
+        windows_license: asset.windows_license,
+        hostname: asset.hostname
+      })
+      .eq('id', asset.id)
       .select()
       .single();
-
-    if (error) {
-      console.error("Error updating asset:", error);
-      throw error;
-    }
-
+    
+    if (error) throw error;
+    
     toast({
       title: "Asset updated",
-      description: `${asset.name || 'Asset'} has been updated.`
+      description: `${asset.name} has been updated successfully.`
     });
-
-    return dbToAsset(data);
+    
+    return data;
   } catch (error) {
-    console.error("Error in updateAsset:", error);
+    console.error('Error updating asset:', error);
     toast({
       title: "Error updating asset",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
+      description: error instanceof Error ? error.message : "Unknown error occurred",
       variant: "destructive"
     });
-    throw error;
+    return null;
   }
 };
 
-export const deleteAsset = async (id: string): Promise<void> => {
+/**
+ * Deletes an asset from the database
+ */
+export const deleteAsset = async (id: string): Promise<boolean> => {
   try {
-    // Using any to bypass TypeScript's type checking
-    const { error } = await (supabase as any)
-      .from("assets")
+    const { error } = await supabase
+      .from('assets')
       .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error deleting asset:", error);
-      throw error;
-    }
-
+      .eq('id', id);
+    
+    if (error) throw error;
+    
     toast({
       title: "Asset deleted",
-      description: "The asset has been removed from inventory."
+      description: "The asset has been removed successfully."
     });
+    
+    return true;
   } catch (error) {
-    console.error("Error in deleteAsset:", error);
+    console.error('Error deleting asset:', error);
     toast({
       title: "Error deleting asset",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
+      description: error instanceof Error ? error.message : "Unknown error occurred",
       variant: "destructive"
     });
-    throw error;
+    return false;
   }
 };

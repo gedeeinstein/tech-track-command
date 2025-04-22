@@ -81,7 +81,7 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+        <DialogHeader className="overflow-y-auto">
           <DialogTitle>
             {currentAssembly ? "Edit Assembly" : "Create New Assembly"}
           </DialogTitle>
@@ -93,7 +93,7 @@ export const AssemblyFormDialog: React.FC<AssemblyFormDialogProps> = ({
         </DialogHeader>
         <form onSubmit={handleSubmit} id="assembly-form">
           <Tabs defaultValue="details">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 ">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="components">Components</TabsTrigger>
             </TabsList>

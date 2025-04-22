@@ -16,25 +16,23 @@ const ROMAN_MONTHS: Record<number, string> = {
 
 /**
  * Generates an inventory number based on the specified format
- * IT-FA/KPTM/{AssetType}/{Roman_numerals_Month}/{Year}/{DepartmentCode}/{id}
+ * IT-FA/KPTM/{AssetType}/{Roman_numerals_Month}/{Year}/{Department}/{id}
  */
-export const generateInventoryNumber = async (
+export const generateInventoryNumber = (
   assetType: string,
-  departmentCode: string
-): Promise<string> => {
-  const date = new Date();
-  const month = date.getMonth() + 1;
+  id: number,
+  department: string = "IT",
+  date: Date = new Date()
+): string => {
+  const month = date.getMonth() + 1; // JavaScript months are 0-indexed
   const year = date.getFullYear();
   const romanMonth = ROMAN_MONTHS[month];
   
   // Format the asset type to be uppercase and remove spaces
   const formattedAssetType = assetType.toUpperCase().replace(/\s+/g, "");
   
-  // Generate a random 3-digit number for the sequential ID
-  const sequentialId = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  
-  // Generate the inventory number with full year and department code
-  return `IT-FA/KPTM/${formattedAssetType}/${romanMonth}/${year}/${departmentCode}/${sequentialId}`;
+  // Generate the inventory number
+  return `IT-FA/KPTM/${formattedAssetType}/${romanMonth}/${year}/${department}/${id.toString().padStart(3, '0')}`;
 };
 
 /**

@@ -258,8 +258,8 @@ const Users: React.FC = () => {
               <TableHead>Role</TableHead>
               <TableHead className="hidden md:table-cell">Status</TableHead>
               <TableHead className="hidden lg:table-cell">Last Login</TableHead>
-              <TableHead className="w-[60px]"></TableHead>
               <TableHead>Department</TableHead>
+              <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -290,6 +290,15 @@ const Users: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">{user.lastLogin || "Never"}</TableCell>
+                   <TableCell>
+                    {
+                        user.departmentId ? (
+                            departments.find(dept => dept.id === user.departmentId)?.name
+                         ) : (
+                            "-"
+                        )
+                    }
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -309,6 +318,8 @@ const Users: React.FC = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
+
+
                 </TableRow>
               ))
             ) : (
