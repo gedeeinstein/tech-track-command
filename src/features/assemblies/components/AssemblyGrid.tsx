@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import { Assembly } from "../types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface AssemblyGridProps {
   assemblies: Assembly[];
@@ -71,33 +73,48 @@ export const AssemblyGrid: React.FC<AssemblyGridProps> = ({
               </div>
             </CardContent>
             <CardFooter className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => onViewDetails(assembly)}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                Details
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => onEdit(assembly)}
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => onDelete(assembly.id)}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-center"
+                      onClick={() => onViewDetails(assembly)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Details</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-center"
+                      onClick={() => onEdit(assembly)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full justify-center" onClick={() => onDelete(assembly.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Delete</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </CardFooter>
           </Card>
         ))

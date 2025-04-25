@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Assembly } from "../types";
 import { fetchAssemblies, createAssembly, updateAssembly, deleteAssembly } from "@/services/assemblyService";
-import { fetchAssets } from "@/services/assetService";
+// import { fetchAssets } from "@/services/assetService";
 import { Asset } from "../types";
 import { toast } from "@/hooks/use-toast";
 

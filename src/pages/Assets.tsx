@@ -4,19 +4,19 @@ import AssetTable from "@/features/assets/components/AssetTable";
 import AssetHeader from "@/features/assets/components/AssetHeader";
 import AssetFilters from "@/features/assets/components/AssetFilters";
 import AssetForm from "@/features/assets/components/AssetForm";
-import { toast } from "@/components/ui/use-toast";
-import { Asset } from "@/features/assemblies/types";
-import { ASSET_TYPES, ASSET_STATUSES } from "@/features/assets/data/mockData";
+import { toast } from "@/hooks/use-toast";
+import { Asset as UIAsset } from "@/features/assemblies/types";
+import { getAssets, createAsset, updateAsset, deleteAsset } from "@/services/assetService";
+import { MOCK_COMPONENTS, ASSET_TYPES, ASSET_STATUSES } from "@/features/assets/data/mockData";
+import { generateInventoryNumber } from "@/features/assets/utils/inventoryGenerator";
 import { useDialog } from "@/hooks/useDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchAssets, createAsset, updateAsset, deleteAsset } from "@/services/assetService";
-import { fetchComponents } from "@/services/componentService";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { serviceToUIAsset, uiToServiceAsset } from "@/features/assets/utils/assetConverter";
+import { getComponents } from "@/services/componentService";
 
 const Assets = () => {
   const queryClient = useQueryClient();
-  const [currentAsset, setCurrentAsset] = useState<Asset | null>(null);
+  const [currentAsset, setCurrentAsset] = useState<UIAsset | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState(ASSET_TYPES[0]);
   const [selectedStatus, setSelectedStatus] = useState(ASSET_STATUSES[0]);
@@ -24,157 +24,151 @@ const Assets = () => {
   const [isFormOpen, setIsFormOpen] = useDialog(false);
 
   // Fetch assets
-  const { data: assets = [], isLoading: isLoadingAssets, isError: isErrorAssets, error: assetsError } = useQuery({
+  const { data: serviceAssets = [], isLoading } = useQuery({
     queryKey: ['assets'],
-    queryFn: fetchAssets
+    queryFn: getAssets
   });
-
-  // Fetch components for the form with debugging
-  const { 
-    data: components = [], 
-    isLoading: isLoadingComponents, 
-    isError: isErrorComponents,
-    error: componentsError
-  } = useQuery({
+  
+  // Fetch components for the dropdown selections
+  const { data: components = [] } = useQuery({
     queryKey: ['components'],
-    queryFn: fetchComponents
+    queryFn: getComponents
   });
+  
+  // Convert service assets to UI assets
+  const assets: UIAsset[] = serviceAssets.map(serviceToUIAsset);
 
-  // Debug component data on load
-  useEffect(() => {
-    if (components.length > 0) {
-      console.log("Loaded components:", components);
-      console.log("Processors:", components.filter(c => c.type === "Processor"));
-      console.log("RAM:", components.filter(c => c.type === "RAM"));
-    }
-  }, [components]);
-
-  // Mutations
-  const createMutation = useMutation({
+  // Create asset mutation
+  const createAssetMutation = useMutation({
     mutationFn: createAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      setIsFormOpen(false);
       toast({
-        title: "Asset Added",
-        description: "The asset has been successfully added."
+        title: "Asset Created",
+        description: "The asset has been created successfully."
       });
     },
     onError: (error) => {
+      console.error("Error creating asset:", error);
       toast({
         title: "Error",
-        description: `Failed to add asset: ${error.message}`,
+        description: "Failed to create asset. Please try again.",
         variant: "destructive"
       });
     }
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, asset }: { id: string; asset: Partial<Asset> }) => 
-      updateAsset(id, asset),
+  // Update asset mutation
+  const updateAssetMutation = useMutation({
+    mutationFn: updateAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      setIsFormOpen(false);
       toast({
         title: "Asset Updated",
-        description: "The asset has been successfully updated."
+        description: "The asset has been updated successfully."
       });
     },
     onError: (error) => {
+      console.error("Error updating asset:", error);
       toast({
         title: "Error",
-        description: `Failed to update asset: ${error.message}`,
+        description: "Failed to update asset. Please try again.",
         variant: "destructive"
       });
     }
   });
 
-  const deleteMutation = useMutation({
+  // Delete asset mutation
+  const deleteAssetMutation = useMutation({
     mutationFn: deleteAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       toast({
         title: "Asset Deleted",
-        description: "The asset has been removed from inventory."
+        description: "The asset has been deleted successfully."
       });
     },
     onError: (error) => {
+      console.error("Error deleting asset:", error);
       toast({
         title: "Error",
-        description: `Failed to delete asset: ${error.message}`,
+        description: "Failed to delete asset. Please try again.",
         variant: "destructive"
       });
     }
   });
 
-  const handleAddEdit = (asset: Asset | null = null) => {
+  const handleAddEdit = (asset: UIAsset | null = null) => {
     setCurrentAsset(asset);
     setIsFormOpen(true);
   };
 
-  const handleFormSubmit = (data: any) => {
-    if (currentAsset) {
-      // Update existing asset
-      updateMutation.mutate({
-        id: currentAsset.id,
-        asset: data
+  const handleFormSubmit = async (data: any) => {
+    try {
+      if (currentAsset) {
+        // Update existing asset - Remove any references to updated_at
+        const serviceData = {
+          id: currentAsset.id,
+          ...uiToServiceAsset({ ...currentAsset, ...data })
+        };
+        await updateAssetMutation.mutateAsync(serviceData);
+      } else {
+        // Create new asset
+        const type = data.type || "Other";
+        // Generate inventory number
+        const inventoryNumber = generateInventoryNumber(type, assets.length + 1);
+        
+        // Convert UI data to service data
+        const serviceData = uiToServiceAsset({ 
+          ...data, 
+          inventoryNumber,
+          // Set defaults for required fields
+          assignedTo: data.assignedTo || "Unassigned",
+          location: data.location || "Storage",
+          status: data.status || "Active",
+          purchaseDate: data.purchaseDate || new Date().toISOString().split('T')[0],
+          warranty: data.warranty || new Date().toISOString().split('T')[0]
+        } as UIAsset);
+        
+        await createAssetMutation.mutateAsync(serviceData);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while processing your request.",
+        variant: "destructive"
       });
-    } else {
-      // Create new asset
-      createMutation.mutate(data);
     }
-    setIsFormOpen(false);
   };
 
-  const handleDeleteAsset = (id: string) => {
-    deleteMutation.mutate(id);
+  const handleDeleteAsset = async (id: string) => {
+    try {
+      await deleteAssetMutation.mutateAsync(id);
+    } catch (error) {
+      console.error("Delete asset error:", error);
+    }
   };
 
   // Filter assets based on search and filters
   const filteredAssets = assets.filter(asset => {
-    // Apply search filter
     const matchesSearch = 
       asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.inventoryNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Apply type filter
     const matchesType = selectedType === "All Types" || asset.type === selectedType;
-    
-    // Apply status filter
     const matchesStatus = selectedStatus === "All Statuses" || asset.status === selectedStatus;
     
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const isLoading = isLoadingAssets || isLoadingComponents;
-
   return (
     <div className="space-y-6">
       <AssetHeader handleAddEdit={() => handleAddEdit()} />
-      
-      {isErrorAssets && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {assetsError instanceof Error 
-              ? assetsError.message 
-              : "Failed to load assets. Please try again later."}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {isErrorComponents && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error Loading Components</AlertTitle>
-          <AlertDescription>
-            {componentsError instanceof Error 
-              ? componentsError.message 
-              : "Failed to load components. Component selection in forms may not work correctly."}
-          </AlertDescription>
-        </Alert>
-      )}
       
       <AssetFilters
         searchQuery={searchQuery}
@@ -188,7 +182,9 @@ const Assets = () => {
       />
       
       {isLoading ? (
-        <div className="p-4 text-center">Loading assets...</div>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
       ) : (
         <AssetTable
           assets={filteredAssets}
@@ -201,7 +197,9 @@ const Assets = () => {
         open={isFormOpen}
         setOpen={(open) => {
           setIsFormOpen(open);
-          if (!open) document.body.style.removeProperty('pointer-events');
+          if (!open) {
+            setCurrentAsset(null);
+          }
         }}
         currentAsset={currentAsset}
         assets={assets}
