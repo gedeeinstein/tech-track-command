@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Asset } from "@/features/assemblies/types";
 import { toast } from "@/components/ui/use-toast";
+import { generateInventoryNumber } from "@/features/assets/utils/inventoryGenerator";
 
 // Helper function to convert snake_case database object to camelCase Asset
 const dbToAsset = (dbAsset: any): Asset => {
@@ -82,11 +83,17 @@ const generateAssetCode = (type: string, departmentId: string | undefined): stri
   return `IT-FA/KPTM/${typePrefix}/${romanMonth}/${year}/${deptCode}/${autoNumber}`;
 };
 
+// Generate a unique ID for assets
+const generateAssetId = (): string => {
+  // Create a unique ID with 'AST' prefix
+  return `AST${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+};
+
 export const fetchAssets = async (): Promise<Asset[]> => {
   try {
     // Using any to bypass TypeScript's type checking
     const { data, error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+      .from("assets")
       .select("*");
 
     if (error) {
@@ -107,22 +114,67 @@ export const fetchAssets = async (): Promise<Asset[]> => {
   }
 };
 
+export const fetchDepartmentCode = async (departmentId: string): Promise<string> => {
+  try {
+    console.log("Fetching department code for department ID:", departmentId);
+    
+    const { data, error } = await supabase
+      .from("departments")
+      .select("code")
+      .eq("id", departmentId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching department code:", error);
+      throw error;
+    }
+
+    console.log("Department data retrieved:", data);
+    
+    if (!data || !data.code) {
+      console.warn("No department code found, using default GEN");
+      return "GEN"; // Default fallback code
+    }
+    
+    console.log("Using department code:", data.code);
+    return data.code;
+  } catch (error) {
+    console.error("Error in fetchDepartmentCode:", error);
+    toast({
+      title: "Error fetching department code",
+      description: error instanceof Error ? error.message : "An unknown error occurred",
+      variant: "destructive"
+    });
+    return "GEN"; // Default fallback code
+  }
+};
+
 export const createAsset = async (asset: Omit<Asset, "id" | "inventoryNumber">): Promise<Asset> => {
   try {
-    // Generate asset code
-    const assetCode = generateAssetCode(asset.type, asset.division);
+    console.log("Creating asset with division:", asset.division);
+    
+    // Get department code for the inventory number
+    const departmentCode = await fetchDepartmentCode(asset.division);
+    console.log("Retrieved department code:", departmentCode);
+    
+    // Generate asset code using the full year and department code
+    const assetCode = await generateInventoryNumber(asset.type, departmentCode);
+    console.log("Generated inventory number:", assetCode);
+    
+    // Generate a unique ID for the asset
+    const assetId = `AST${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
     
     const newAsset = {
       ...asset,
+      id: assetId,
       inventoryNumber: assetCode
     };
 
     // Convert to database format
     const dbAsset = assetToDB(newAsset);
 
-    // Using any to bypass TypeScript's type checking
-    const { data, error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+    const { data, error } = await supabase
+      .from("assets")
       .insert(dbAsset)
       .select()
       .single();
@@ -156,7 +208,7 @@ export const updateAsset = async (id: string, asset: Partial<Asset>): Promise<As
 
     // Using any to bypass TypeScript's type checking
     const { data, error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+      .from("assets")
       .update(dbAsset)
       .eq("id", id)
       .select()
@@ -188,7 +240,7 @@ export const deleteAsset = async (id: string): Promise<void> => {
   try {
     // Using any to bypass TypeScript's type checking
     const { error } = await (supabase as any)
-      .from("assets")  // Changed from "assets_new" to "assets"
+      .from("assets")
       .delete()
       .eq("id", id);
 
