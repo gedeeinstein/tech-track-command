@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Component } from "@/features/assemblies/types";
 import { Json } from "@/integrations/supabase/types";
+import { v4 as uuidv4 } from "uuid";
 
 // Helper function to convert database component to Component
 const dbToComponent = (dbComponent: any): Component => {
@@ -104,7 +105,13 @@ export const fetchComponentsByType = async (typeId: string): Promise<Component[]
 
 export const createComponent = async (component: Omit<Component, "id">): Promise<Component | null> => {
   try {
-    const dbComponent = componentToDB(component);
+    // Generate a unique ID for the component if one isn't provided
+    const componentWithId = {
+      ...component,
+      id: `CMP${Math.floor(1000 + Math.random() * 9000)}` // Generate a simple 4-digit ID with CMP prefix
+    };
+    
+    const dbComponent = componentToDB(componentWithId);
     
     const { data, error } = await (supabase as any)
       .from("components")

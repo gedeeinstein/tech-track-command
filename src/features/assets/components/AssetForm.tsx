@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { 
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
@@ -408,7 +409,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       <SelectContent>
                         {getComponentsByType("Processor").length > 0 ? (
                           getComponentsByType("Processor").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
+                            // Fix: Add placeholder ID when it's empty
+                            <SelectItem 
+                              key={component.id || `processor-${component.name}`} 
+                              value={component.id || `processor-${component.name}`}
+                            >
                               {component.name}
                             </SelectItem>
                           ))
@@ -444,7 +449,10 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       <SelectContent>
                         {getComponentsByType("Motherboard").length > 0 ? (
                           getComponentsByType("Motherboard").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
+                            <SelectItem 
+                              key={component.id || `motherboard-${component.name}`} 
+                              value={component.id || `motherboard-${component.name}`}
+                            >
                               {component.name}
                             </SelectItem>
                           ))
@@ -482,7 +490,10 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       <SelectContent>
                         {getComponentsByType("RAM").length > 0 ? (
                           getComponentsByType("RAM").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
+                            <SelectItem 
+                              key={component.id || `ram-${component.name}`} 
+                              value={component.id || `ram-${component.name}`}
+                            >
                               {component.name}
                             </SelectItem>
                           ))
@@ -518,7 +529,10 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       <SelectContent>
                         {getComponentsByType("Storage").length > 0 ? (
                           getComponentsByType("Storage").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
+                            <SelectItem 
+                              key={component.id || `storage-${component.name}`} 
+                              value={component.id || `storage-${component.name}`}
+                            >
                               {component.name}
                             </SelectItem>
                           ))
@@ -556,7 +570,10 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       <SelectContent>
                         {getComponentsByType("Monitor").length > 0 ? (
                           getComponentsByType("Monitor").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
+                            <SelectItem 
+                              key={component.id || `monitor-${component.name}`} 
+                              value={component.id || `monitor-${component.name}`}
+                            >
                               {component.name}
                             </SelectItem>
                           ))
@@ -590,7 +607,10 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         {getComponentsByType("Peripherals").map((component) => (
-                          <SelectItem key={component.id} value={component.id}>
+                          <SelectItem 
+                            key={component.id || `peripheral-${component.name}`} 
+                            value={component.id || `peripheral-${component.name}`}
+                          >
                             {component.name}
                           </SelectItem>
                         ))}

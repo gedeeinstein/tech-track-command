@@ -6,6 +6,7 @@ import ComponentGrid from "@/features/components/components/ComponentGrid";
 import ComponentList from "@/features/components/components/ComponentList";
 import ComponentFormDialog from "@/features/components/components/ComponentFormDialog";
 import ComponentLoadingState from "@/features/components/components/ComponentLoadingState";
+import { Toaster } from "@/components/ui/toaster";
 
 const Components: React.FC = () => {
   const {
@@ -63,6 +64,9 @@ const Components: React.FC = () => {
         onSubmit={handleSaveComponent}
         currentComponent={currentComponent}
       />
+      
+      {/* Toaster for notifications */}
+      <Toaster />
     </div>
   );
 };
