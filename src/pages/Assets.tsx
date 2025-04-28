@@ -1,655 +1,215 @@
 
-import React, { useEffect } from "react";
-import { 
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
-import { 
-  Form, FormField, FormItem, FormLabel, FormControl
-} from "@/components/ui/form";
-import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { 
-  Cpu, HardDrive, Keyboard, Monitor, Server, Users
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import AssetTable from "@/features/assets/components/AssetTable";
+import AssetHeader from "@/features/assets/components/AssetHeader";
+import AssetFilters from "@/features/assets/components/AssetFilters";
+import AssetForm from "@/features/assets/components/AssetForm";
+import { toast } from "@/components/ui/use-toast";
 import { Asset } from "@/features/assemblies/types";
-import { useForm } from "react-hook-form";
-import { OPERATING_SYSTEMS, DIVISIONS } from "@/features/assemblies/types";
-import { generateInventoryNumber } from "@/features/assets/utils/inventoryGenerator";
+import { ASSET_TYPES, ASSET_STATUSES } from "@/features/assets/data/mockData";
+import { useDialog } from "@/hooks/useDialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAssets, createAsset, updateAsset, deleteAsset } from "@/services/assetService";
+import { fetchComponents } from "@/services/componentService";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
-interface ComponentType {
-  id: string;
-  name: string;
-  type: string;
-}
+const Assets = () => {
+  const queryClient = useQueryClient();
+  const [currentAsset, setCurrentAsset] = useState<Asset | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState(ASSET_TYPES[0]);
+  const [selectedStatus, setSelectedStatus] = useState(ASSET_STATUSES[0]);
+  
+  const [isFormOpen, setIsFormOpen] = useDialog(false);
 
-interface AssetFormProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  currentAsset: Asset | null;
-  assets: Asset[];
-  onSubmit: (data: any) => void;
-  components: ComponentType[];
-}
+  // Fetch assets
+  const { data: assets = [], isLoading: isLoadingAssets, isError: isErrorAssets, error: assetsError } = useQuery({
+    queryKey: ['assets'],
+    queryFn: fetchAssets
+  });
 
-const ASSET_TYPES = [
-  "Desktop",
-  "Laptop",
-  "Server",
-  "Tablet",
-  "Printer",
-  "Networking",
-  "Audio/Video",
-  "Mobile",
-  "Other"
-];
+  // Fetch components for the form with debugging
+  const { 
+    data: components = [], 
+    isLoading: isLoadingComponents, 
+    isError: isErrorComponents,
+    error: componentsError
+  } = useQuery({
+    queryKey: ['components'],
+    queryFn: fetchComponents
+  });
 
-const ASSET_STATUSES = [
-  "Active",
-  "Maintenance",
-  "Decommissioned"
-];
+  // Debug component data on load
+  useEffect(() => {
+    if (components.length > 0) {
+      console.log("Loaded components:", components);
+      console.log("Processors:", components.filter(c => c.type === "Processor"));
+      console.log("RAM:", components.filter(c => c.type === "RAM"));
+    }
+  }, [components]);
 
-const AssetForm: React.FC<AssetFormProps> = ({
-  open,
-  setOpen,
-  currentAsset,
-  assets,
-  onSubmit,
-  components
-}) => {
-  const form = useForm({
-    defaultValues: {
-      name: "",
-      type: "Desktop",
-      status: "Active",
-      location: "",
-      assignedTo: "",
-      purchaseDate: new Date().toISOString().split('T')[0],
-      warranty: "",
-      operatingSystem: "",
-      user: "",
-      processor: "",
-      motherboard: "",
-      ram: "",
-      storage: "",
-      monitor: "",
-      peripherals: [] as string[],
-      expansionCards: [] as string[],
-      accessories: [] as string[],
-      division: "",
-      windowsLicense: "",
-      hostname: ""
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: createAsset,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      toast({
+        title: "Asset Added",
+        description: "The asset has been successfully added."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to add asset: ${error.message}`,
+        variant: "destructive"
+      });
     }
   });
 
-  useEffect(() => {
-    if (currentAsset) {
-      form.reset({
-        name: currentAsset.name || "",
-        type: currentAsset.type || "Desktop",
-        status: currentAsset.status || "Active",
-        location: currentAsset.location || "",
-        assignedTo: currentAsset.assignedTo || "",
-        purchaseDate: currentAsset.purchaseDate || new Date().toISOString().split('T')[0],
-        warranty: currentAsset.warranty || "",
-        operatingSystem: currentAsset.operatingSystem || "",
-        user: currentAsset.user || "",
-        processor: currentAsset.processor || "",
-        motherboard: currentAsset.motherboard || "",
-        ram: currentAsset.ram || "",
-        storage: currentAsset.storage || "",
-        monitor: currentAsset.monitor || "",
-        peripherals: currentAsset.peripherals || [],
-        expansionCards: currentAsset.expansionCards || [],
-        accessories: currentAsset.accessories || [],
-        division: currentAsset.division || "",
-        windowsLicense: currentAsset.windowsLicense || "",
-        hostname: currentAsset.hostname || ""
+  const updateMutation = useMutation({
+    mutationFn: ({ id, asset }: { id: string; asset: Partial<Asset> }) => 
+      updateAsset(id, asset),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      toast({
+        title: "Asset Updated",
+        description: "The asset has been successfully updated."
       });
-    } else {
-      form.reset({
-        name: "",
-        type: "Desktop",
-        status: "Active",
-        location: "",
-        assignedTo: "",
-        purchaseDate: new Date().toISOString().split('T')[0],
-        warranty: "",
-        operatingSystem: "",
-        user: "",
-        processor: "",
-        motherboard: "",
-        ram: "",
-        storage: "",
-        monitor: "",
-        peripherals: [],
-        expansionCards: [],
-        accessories: [],
-        division: "",
-        windowsLicense: "",
-        hostname: ""
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update asset: ${error.message}`,
+        variant: "destructive"
       });
     }
-  }, [currentAsset, form]);
+  });
 
-  const getComponentsByType = (type: string) => {
-    return components.filter(component => 
-      component.type.toLowerCase() === type.toLowerCase()
-    );
-  };
+  const deleteMutation = useMutation({
+    mutationFn: deleteAsset,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      toast({
+        title: "Asset Deleted",
+        description: "The asset has been removed from inventory."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete asset: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
 
-  const getComponentNameById = (id: string) => {
-    const component = components.find(c => c.id === id);
-    return component ? component.name : "Not Specified";
+  const handleAddEdit = (asset: Asset | null = null) => {
+    setCurrentAsset(asset);
+    setIsFormOpen(true);
   };
 
   const handleFormSubmit = (data: any) => {
-    onSubmit(data);
+    if (currentAsset) {
+      // Update existing asset
+      updateMutation.mutate({
+        id: currentAsset.id,
+        asset: data
+      });
+    } else {
+      // Create new asset
+      createMutation.mutate(data);
+    }
+    setIsFormOpen(false);
   };
 
-  console.log("Available components:", components);
-  console.log("Processors:", getComponentsByType("Processor"));
-  console.log("RAM:", getComponentsByType("RAM"));
-  console.log("Storage:", getComponentsByType("Storage"));
-  console.log("Motherboards:", getComponentsByType("Motherboard"));
-  console.log("Monitors:", getComponentsByType("Monitor"));
+  const handleDeleteAsset = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
+  // Filter assets based on search and filters
+  const filteredAssets = assets.filter(asset => {
+    // Apply search filter
+    const matchesSearch = 
+      asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      asset.inventoryNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      asset.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      asset.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Apply type filter
+    const matchesType = selectedType === "All Types" || asset.type === selectedType;
+    
+    // Apply status filter
+    const matchesStatus = selectedStatus === "All Statuses" || asset.status === selectedStatus;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const isLoading = isLoadingAssets || isLoadingComponents;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{currentAsset ? "Edit Asset" : "Add New Asset"}</DialogTitle>
-          <DialogDescription>
-            {currentAsset 
-              ? "Update the details of the selected asset." 
-              : "Enter the details of the new asset to add it to inventory."}
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Asset Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter asset name" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Asset Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {ASSET_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
+    <div className="space-y-6">
+      <AssetHeader handleAddEdit={() => handleAddEdit()} />
+      
+      {isErrorAssets && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {assetsError instanceof Error 
+              ? assetsError.message 
+              : "Failed to load assets. Please try again later."}
+          </AlertDescription>
+        </Alert>
+      )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {ASSET_STATUSES.map((status) => (
-                          <SelectItem key={status} value={status}>{status}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="division"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Division</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select division" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {DIVISIONS.map((division) => (
-                          <SelectItem key={division} value={division}>{division}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Physical location" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="assignedTo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assigned To</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Person or team" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="purchaseDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Purchase Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="warranty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warranty Until</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="operatingSystem"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Operating System</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select OS" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {OPERATING_SYSTEMS.map((os) => (
-                          <SelectItem key={os} value={os}>{os}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="user"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>User</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Username" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="windowsLicense"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Windows License</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="License key" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="hostname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hostname</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Computer name" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="processor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <div className="flex items-center gap-1">
-                        <Cpu className="h-4 w-4" />
-                        <span>Processor</span>
-                      </div>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select processor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getComponentsByType("Processor").length > 0 ? (
-                          getComponentsByType("Processor").map((component) => (
-                            // Fix: Add placeholder ID when it's empty
-                            <SelectItem 
-                              key={component.id || `processor-${component.name}`} 
-                              value={component.id || `processor-${component.name}`}
-                            >
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No processors available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="motherboard"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <div className="flex items-center gap-1">
-                        <Server className="h-4 w-4" />
-                        <span>Motherboard</span>
-                      </div>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select motherboard" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getComponentsByType("Motherboard").length > 0 ? (
-                          getComponentsByType("Motherboard").map((component) => (
-                            <SelectItem 
-                              key={component.id || `motherboard-${component.name}`} 
-                              value={component.id || `motherboard-${component.name}`}
-                            >
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No motherboards available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="ram"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <div className="flex items-center gap-1">
-                        <HardDrive className="h-4 w-4" />
-                        <span>RAM</span>
-                      </div>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select RAM" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getComponentsByType("RAM").length > 0 ? (
-                          getComponentsByType("RAM").map((component) => (
-                            <SelectItem 
-                              key={component.id || `ram-${component.name}`} 
-                              value={component.id || `ram-${component.name}`}
-                            >
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No RAM modules available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="storage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <div className="flex items-center gap-1">
-                        <HardDrive className="h-4 w-4" />
-                        <span>Storage</span>
-                      </div>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select storage" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getComponentsByType("Storage").length > 0 ? (
-                          getComponentsByType("Storage").map((component) => (
-                            <SelectItem 
-                              key={component.id || `storage-${component.name}`} 
-                              value={component.id || `storage-${component.name}`}
-                            >
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No storage devices available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="monitor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <div className="flex items-center gap-1">
-                        <Monitor className="h-4 w-4" />
-                        <span>Monitor</span>
-                      </div>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select monitor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getComponentsByType("Monitor").length > 0 ? (
-                          getComponentsByType("Monitor").map((component) => (
-                            <SelectItem 
-                              key={component.id || `monitor-${component.name}`} 
-                              value={component.id || `monitor-${component.name}`}
-                            >
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No monitors available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="peripherals"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <div className="flex items-center gap-1">
-                        <Keyboard className="h-4 w-4" />
-                        <span>Peripherals</span>
-                      </div>
-                    </FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange([...field.value, value])}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Add peripheral" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getComponentsByType("Peripherals").map((component) => (
-                          <SelectItem 
-                            key={component.id || `peripheral-${component.name}`} 
-                            value={component.id || `peripheral-${component.name}`}
-                          >
-                            {component.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {field.value && field.value.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {field.value.map((id) => (
-                          <div key={id} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs flex items-center gap-1">
-                            {getComponentNameById(id)}
-                            <button
-                              type="button"
-                              onClick={() => field.onChange(field.value.filter((v) => v !== id))}
-                              className="ml-1 hover:bg-destructive/10 rounded-full p-1"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="flex justify-end pt-4">
-              <button 
-                type="submit" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
-              >
-                {currentAsset ? "Update Asset" : "Add Asset"}
-              </button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+      {isErrorComponents && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Components</AlertTitle>
+          <AlertDescription>
+            {componentsError instanceof Error 
+              ? componentsError.message 
+              : "Failed to load components. Component selection in forms may not work correctly."}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <AssetFilters
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedType={selectedType}
+        setSelectedType={setSelectedType}
+        selectedStatus={selectedStatus}
+        setSelectedStatus={setSelectedStatus}
+        assetTypes={ASSET_TYPES}
+        assetStatuses={ASSET_STATUSES}
+      />
+      
+      {isLoading ? (
+        <div className="p-4 text-center">Loading assets...</div>
+      ) : (
+        <AssetTable
+          assets={filteredAssets}
+          handleAddEdit={handleAddEdit}
+          handleDeleteAsset={handleDeleteAsset}
+        />
+      )}
+      
+      <AssetForm
+        open={isFormOpen}
+        setOpen={(open) => {
+          setIsFormOpen(open);
+          if (!open) document.body.style.removeProperty('pointer-events');
+        }}
+        currentAsset={currentAsset}
+        assets={assets}
+        onSubmit={handleFormSubmit}
+        components={components}
+      />
+    </div>
   );
 };
 
-export default AssetForm;
+export default Assets;
