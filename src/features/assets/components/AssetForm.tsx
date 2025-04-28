@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { 
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
@@ -15,8 +14,12 @@ import {
 } from "lucide-react";
 import { Asset } from "@/features/assemblies/types";
 import { useForm } from "react-hook-form";
-import { OPERATING_SYSTEMS, DIVISIONS } from "@/features/assemblies/types";
+import { OPERATING_SYSTEMS } from "@/features/assemblies/types";
 import { generateInventoryNumber } from "@/features/assets/utils/inventoryGenerator";
+import { useQuery } from "@tanstack/react-query";
+import { fetchDepartments } from "@/services/departmentService";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ComponentType {
   id: string;
@@ -59,6 +62,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
   onSubmit,
   components
 }) => {
+  const { data: departments = [], isLoading: isDepartmentsLoading, error: departmentsError } = useQuery({
+    queryKey: ['departments'],
+    queryFn: fetchDepartments
+  });
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -167,6 +175,17 @@ const AssetForm: React.FC<AssetFormProps> = ({
               : "Enter the details of the new asset to add it to inventory."}
           </DialogDescription>
         </DialogHeader>
+
+        {departmentsError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              Failed to load departments. Default department will be used.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -240,20 +259,29 @@ const AssetForm: React.FC<AssetFormProps> = ({
                 name="division"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Division</FormLabel>
+                    <FormLabel>Department</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={isDepartmentsLoading}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select division" />
+                          <SelectValue placeholder={isDepartmentsLoading ? "Loading..." : "Select department"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {DIVISIONS.map((division) => (
-                          <SelectItem key={division} value={division}>{division}</SelectItem>
-                        ))}
+                        {departments.length > 0 ? (
+                          departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id}>
+                              {dept.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-department" disabled>
+                            {isDepartmentsLoading ? "Loading departments..." : "No departments available"}
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -409,7 +437,6 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       <SelectContent>
                         {getComponentsByType("Processor").length > 0 ? (
                           getComponentsByType("Processor").map((component) => (
-                            // Fix: Add placeholder ID when it's empty
                             <SelectItem 
                               key={component.id || `processor-${component.name}`} 
                               value={component.id || `processor-${component.name}`}
