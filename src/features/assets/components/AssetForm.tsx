@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { 
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
@@ -134,9 +135,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
   }, [currentAsset, form]);
 
   const getComponentsByType = (type: string) => {
-    return components.filter(component => 
-      component.type.toLowerCase() === type.toLowerCase()
-    );
+    return components.filter(component => component.type === type);
   };
 
   const getComponentNameById = (id: string) => {
@@ -147,13 +146,6 @@ const AssetForm: React.FC<AssetFormProps> = ({
   const handleFormSubmit = (data: any) => {
     onSubmit(data);
   };
-
-  console.log("Available components:", components);
-  console.log("Processors:", getComponentsByType("Processor"));
-  console.log("RAM:", getComponentsByType("RAM"));
-  console.log("Storage:", getComponentsByType("Storage"));
-  console.log("Motherboards:", getComponentsByType("Motherboard"));
-  console.log("Monitors:", getComponentsByType("Monitor"));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -406,15 +398,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {getComponentsByType("Processor").length > 0 ? (
-                          getComponentsByType("Processor").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No processors available</SelectItem>
-                        )}
+                        {getComponentsByType("Processor").map((component) => (
+                          <SelectItem key={component.id} value={component.id}>
+                            {component.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -442,15 +430,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {getComponentsByType("Motherboard").length > 0 ? (
-                          getComponentsByType("Motherboard").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No motherboards available</SelectItem>
-                        )}
+                        {getComponentsByType("Motherboard").map((component) => (
+                          <SelectItem key={component.id} value={component.id}>
+                            {component.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -480,15 +464,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {getComponentsByType("RAM").length > 0 ? (
-                          getComponentsByType("RAM").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No RAM modules available</SelectItem>
-                        )}
+                        {getComponentsByType("RAM").map((component) => (
+                          <SelectItem key={component.id} value={component.id}>
+                            {component.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -516,15 +496,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {getComponentsByType("Storage").length > 0 ? (
-                          getComponentsByType("Storage").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No storage devices available</SelectItem>
-                        )}
+                        {getComponentsByType("Storage").map((component) => (
+                          <SelectItem key={component.id} value={component.id}>
+                            {component.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -554,15 +530,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {getComponentsByType("Monitor").length > 0 ? (
-                          getComponentsByType("Monitor").map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
-                              {component.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>No monitors available</SelectItem>
-                        )}
+                        {getComponentsByType("Monitor").map((component) => (
+                          <SelectItem key={component.id} value={component.id}>
+                            {component.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormItem>
