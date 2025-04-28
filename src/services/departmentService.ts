@@ -11,15 +11,18 @@ export interface Department {
 
 export const fetchDepartments = async (): Promise<Department[]> => {
   try {
+    console.log("Fetching departments from database...");
     const { data, error } = await supabase
       .from("departments")
       .select("*")
       .order("name");
 
     if (error) {
+      console.error("Error fetching departments:", error);
       throw error;
     }
 
+    console.log("Fetched departments:", data);
     return data || [];
   } catch (error) {
     console.error("Error fetching departments:", error);
