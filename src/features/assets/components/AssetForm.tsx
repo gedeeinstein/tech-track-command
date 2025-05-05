@@ -164,9 +164,16 @@ const AssetForm: React.FC<AssetFormProps> = ({
   console.log("Motherboards:", getComponentsByType("Motherboard"));
   console.log("Monitors:", getComponentsByType("Monitor"));
 
+  // Fix issue with empty string values in SelectItem components
+  const ensureNonEmptyValue = (value: string | undefined | null): string => {
+    return value || "not-specified"; // Provide a non-empty default value
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto" onCloseAutoFocus={() => {
+        document.body.style.removeProperty('pointer-events');
+      }}>
         <DialogHeader>
           <DialogTitle>{currentAsset ? "Edit Asset" : "Add New Asset"}</DialogTitle>
           <DialogDescription>
@@ -246,7 +253,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         {ASSET_STATUSES.map((status) => (
-                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                          <SelectItem key={status} value={status || "not-specified"}>{status}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -273,12 +280,12 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       <SelectContent>
                         {departments.length > 0 ? (
                           departments.map((dept) => (
-                            <SelectItem key={dept.id} value={dept.id}>
+                            <SelectItem key={dept.id} value={ensureNonEmptyValue(dept.id)}>
                               {dept.name}
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="no-department" disabled>
+                          <SelectItem value="no-department">
                             {isDepartmentsLoading ? "Loading departments..." : "No departments available"}
                           </SelectItem>
                         )}
@@ -363,7 +370,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         {OPERATING_SYSTEMS.map((os) => (
-                          <SelectItem key={os} value={os}>{os}</SelectItem>
+                          <SelectItem key={os} value={ensureNonEmptyValue(os)}>{os}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

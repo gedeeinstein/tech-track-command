@@ -106,11 +106,13 @@ const Assets = () => {
   });
 
   const handleAddEdit = (asset: Asset | null = null) => {
+    console.log("Opening asset form with:", asset);
     setCurrentAsset(asset);
     setIsFormOpen(true);
   };
 
   const handleFormSubmit = (data: any) => {
+    console.log("Form submitted with data:", data);
     if (currentAsset) {
       // Update existing asset
       updateMutation.mutate({
@@ -197,17 +199,20 @@ const Assets = () => {
         />
       )}
       
-      <AssetForm
-        open={isFormOpen}
-        setOpen={(open) => {
-          setIsFormOpen(open);
-          if (!open) document.body.style.removeProperty('pointer-events');
-        }}
-        currentAsset={currentAsset}
-        assets={assets}
-        onSubmit={handleFormSubmit}
-        components={components}
-      />
+      {/* Fix: Only render AssetForm when data is ready */}
+      {!isLoadingComponents && (
+        <AssetForm
+          open={isFormOpen}
+          setOpen={(open) => {
+            setIsFormOpen(open);
+            if (!open) document.body.style.removeProperty('pointer-events');
+          }}
+          currentAsset={currentAsset}
+          assets={assets}
+          onSubmit={handleFormSubmit}
+          components={components}
+        />
+      )}
     </div>
   );
 };

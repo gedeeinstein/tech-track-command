@@ -214,12 +214,13 @@ export type Database = {
         Row: {
           assembly_id: string | null
           asset_id: string | null
-          assigned_to: string
+          assigned_to: string | null
           completed_date: string | null
           created_at: string
           description: string
           id: string
           next_occurrence: string | null
+          notes: string | null
           priority: string
           recurring: string
           scheduled_date: string
@@ -229,12 +230,13 @@ export type Database = {
         Insert: {
           assembly_id?: string | null
           asset_id?: string | null
-          assigned_to: string
+          assigned_to?: string | null
           completed_date?: string | null
           created_at?: string
           description: string
-          id: string
+          id?: string
           next_occurrence?: string | null
+          notes?: string | null
           priority: string
           recurring: string
           scheduled_date: string
@@ -244,12 +246,13 @@ export type Database = {
         Update: {
           assembly_id?: string | null
           asset_id?: string | null
-          assigned_to?: string
+          assigned_to?: string | null
           completed_date?: string | null
           created_at?: string
           description?: string
           id?: string
           next_occurrence?: string | null
+          notes?: string | null
           priority?: string
           recurring?: string
           scheduled_date?: string
@@ -269,6 +272,13 @@ export type Database = {
             columns: ["asset_id"]
             isOneToOne: false
             referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
