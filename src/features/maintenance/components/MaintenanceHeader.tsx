@@ -1,42 +1,42 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, ScanLine } from "lucide-react";
+import { PlusCircle, QrCode, RefreshCw } from "lucide-react";
 
 interface MaintenanceHeaderProps {
   onNewTask: () => void;
   onScanAsset: () => void;
+  isLoading: boolean;
 }
 
 const MaintenanceHeader: React.FC<MaintenanceHeaderProps> = ({ 
   onNewTask, 
-  onScanAsset 
+  onScanAsset,
+  isLoading 
 }) => {
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Maintenance</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Maintenance Tasks</h1>
         <p className="text-muted-foreground">
-          Schedule and track maintenance tasks for your IT assets
+          Manage maintenance schedules and tasks for assets and assemblies
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex items-center gap-1"
-          onClick={onScanAsset}
+          onClick={onNewTask} 
+          className="flex items-center gap-2"
         >
-          <ScanLine size={16} />
-          <span>Scan Asset</span>
+          <PlusCircle className="h-4 w-4" />
+          <span>New Task</span>
         </Button>
         <Button 
-          size="sm" 
-          className="flex items-center gap-1" 
-          onClick={onNewTask}
+          onClick={onScanAsset} 
+          variant="outline" 
+          className="flex items-center gap-2"
         >
-          <Plus size={16} />
-          <span>New Task</span>
+          <QrCode className="h-4 w-4" />
+          <span>Scan Asset</span>
         </Button>
       </div>
     </div>

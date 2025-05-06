@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Task } from '../types';
 import { getTasks, deleteTask, markTaskCompleted } from '@/services/maintenanceTaskService';
+import { useToast } from '@/hooks/use-toast';
 
 interface UseMaintenanceTasksReturn {
   tasks: Task[];
@@ -24,6 +25,7 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   // Fetch tasks on hook initialization
   useEffect(() => {
@@ -36,6 +38,13 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
     try {
       const data = await getTasks();
       setTasks(data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      toast({
+        title: "Error loading tasks",
+        description: "Could not load maintenance tasks. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -57,19 +66,51 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
 
   // Delete task
   const handleDeleteTask = async (id: string) => {
-    const success = await deleteTask(id);
-    if (success) {
-      setTasks(tasks.filter(task => task.id !== id));
+    try {
+      setIsLoading(true);
+      const success = await deleteTask(id);
+      if (success) {
+        setTasks(tasks.filter(task => task.id !== id));
+        toast({
+          title: "Task deleted",
+          description: "The task has been successfully removed."
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: "Error deleting task",
+        description: "An error occurred while deleting the task.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Mark task as completed
   const handleMarkCompleted = async (id: string) => {
-    const updatedTask = await markTaskCompleted(id);
-    if (updatedTask) {
-      setTasks(tasks.map(task => 
-        task.id === id ? updatedTask : task
-      ));
+    try {
+      setIsLoading(true);
+      const updatedTask = await markTaskCompleted(id);
+      if (updatedTask) {
+        setTasks(tasks.map(task => 
+          task.id === id ? updatedTask : task
+        ));
+        toast({
+          title: "Task completed",
+          description: "The task has been marked as completed."
+        });
+      }
+    } catch (error) {
+      console.error('Error marking task as completed:', error);
+      toast({
+        title: "Error updating task",
+        description: "Could not mark the task as completed.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
