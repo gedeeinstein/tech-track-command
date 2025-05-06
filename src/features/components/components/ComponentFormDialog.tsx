@@ -1,6 +1,6 @@
 
 import React from "react";
-import { DialogHeader, DialogTitle, DialogContent, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogDescription } from "@/components/ui/dialog";
 import { Component } from "@/features/assemblies/types";
 import ComponentForm from "./ComponentForm";
 
@@ -34,22 +34,24 @@ const ComponentFormDialog: React.FC<ComponentFormDialogProps> = ({
   }, [open]);
 
   return (
-    <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={() => {
-      document.body.style.removeProperty('pointer-events');
-    }}>
-      <DialogHeader>
-        <DialogTitle>{currentComponent ? "Edit Component" : "Add New Component"}</DialogTitle>
-        <DialogDescription>
-          {currentComponent 
-            ? "Update the details of the selected component." 
-            : "Enter the details of the new component to add it to inventory."}
-        </DialogDescription>
-      </DialogHeader>
-      <ComponentForm 
-        onSubmit={onSubmit} 
-        currentComponent={currentComponent} 
-      />
-    </DialogContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={() => {
+        document.body.style.removeProperty('pointer-events');
+      }}>
+        <DialogHeader>
+          <DialogTitle>{currentComponent ? "Edit Component" : "Add New Component"}</DialogTitle>
+          <DialogDescription>
+            {currentComponent 
+              ? "Update the details of the selected component." 
+              : "Enter the details of the new component to add it to inventory."}
+          </DialogDescription>
+        </DialogHeader>
+        <ComponentForm 
+          onSubmit={onSubmit} 
+          currentComponent={currentComponent} 
+        />
+      </DialogContent>
+    </Dialog>
   );
 };
 
