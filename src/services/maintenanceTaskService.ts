@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/features/maintenance/types";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Fetches all maintenance tasks from the database
@@ -41,11 +41,6 @@ export const getTasks = async (): Promise<Task[]> => {
     return tasks;
   } catch (error) {
     console.error('Error fetching tasks:', error);
-    toast({
-      title: "Error fetching tasks",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
-      variant: "destructive"
-    });
     return [];
   }
 };
@@ -66,13 +61,12 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
       status: task.status,
       priority: task.priority,
       assigned_to: task.assignedTo,
-      // Handle "none" value for optional fields
-      asset_id: task.asset_id === "none" ? null : task.asset_id,
-      assembly_id: task.assembly_id === "none" ? null : task.assembly_id,
-      scheduled_date: task.scheduled_date,
-      completed_date: task.completed_date,
+      asset_id: task.asset?.id || null,
+      assembly_id: task.assembly?.id || null,
+      scheduled_date: task.scheduledDate,
+      completed_date: task.completedDate,
       recurring: task.recurring,
-      next_occurrence: task.next_occurrence
+      next_occurrence: task.nextOccurrence
     };
     
     // Use 'any' to bypass TypeScript's type checking temporarily
@@ -89,11 +83,6 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
     if (error) {
       throw error;
     }
-    
-    toast({
-      title: "Task created",
-      description: `${task.title} has been added successfully.`
-    });
     
     // Transform the data to match the Task type
     const createdTask: Task = {
@@ -114,11 +103,6 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
     return createdTask;
   } catch (error) {
     console.error('Error creating task:', error);
-    toast({
-      title: "Error creating task",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
-      variant: "destructive"
-    });
     return null;
   }
 };
@@ -135,13 +119,12 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
       status: task.status,
       priority: task.priority,
       assigned_to: task.assignedTo,
-      // Handle "none" value for optional fields
-      asset_id: task.asset_id === "none" ? null : task.asset_id,
-      assembly_id: task.assembly_id === "none" ? null : task.assembly_id,
-      scheduled_date: task.scheduled_date,
-      completed_date: task.completed_date,
+      asset_id: task.asset?.id || null,
+      assembly_id: task.assembly?.id || null,
+      scheduled_date: task.scheduledDate,
+      completed_date: task.completedDate,
       recurring: task.recurring,
-      next_occurrence: task.next_occurrence
+      next_occurrence: task.nextOccurrence
     };
     
     // Use 'any' to bypass TypeScript's type checking temporarily
@@ -159,11 +142,6 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
     if (error) {
       throw error;
     }
-    
-    toast({
-      title: "Task updated",
-      description: `${task.title} has been updated successfully.`
-    });
     
     // Transform the data to match the Task type
     const updatedTask: Task = {
@@ -184,11 +162,6 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
     return updatedTask;
   } catch (error) {
     console.error('Error updating task:', error);
-    toast({
-      title: "Error updating task",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
-      variant: "destructive"
-    });
     return null;
   }
 };
@@ -219,11 +192,6 @@ export const markTaskCompleted = async (id: string): Promise<Task | null> => {
       throw error;
     }
     
-    toast({
-      title: "Task completed",
-      description: "The task has been marked as completed."
-    });
-    
     // Transform the data to match the Task type
     const updatedTask: Task = {
       id: data.id,
@@ -243,11 +211,6 @@ export const markTaskCompleted = async (id: string): Promise<Task | null> => {
     return updatedTask;
   } catch (error) {
     console.error('Error marking task as completed:', error);
-    toast({
-      title: "Error updating task",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
-      variant: "destructive"
-    });
     return null;
   }
 };
@@ -267,19 +230,9 @@ export const deleteTask = async (id: string): Promise<boolean> => {
       throw error;
     }
     
-    toast({
-      title: "Task deleted",
-      description: "The task has been removed successfully."
-    });
-    
     return true;
   } catch (error) {
     console.error('Error deleting task:', error);
-    toast({
-      title: "Error deleting task",
-      description: error instanceof Error ? error.message : "Unknown error occurred",
-      variant: "destructive"
-    });
     return false;
   }
 };

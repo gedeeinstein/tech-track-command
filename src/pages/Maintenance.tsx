@@ -58,18 +58,10 @@ const Maintenance: React.FC = () => {
 
   const handleSaveTask = async (data: any) => {
     try {
-      // Handle "none" values for optional fields
-      const formattedData = {
-        ...data,
-        // Convert "none" to null for asset_id and assembly_id
-        asset_id: data.asset_id === "none" ? null : data.asset_id,
-        assembly_id: data.assembly_id === "none" ? null : data.assembly_id
-      };
-      
       if (currentTask?.id) {
         // Update existing task
         await updateTask({
-          ...formattedData,
+          ...data,
           id: currentTask.id
         });
         toast({
@@ -78,7 +70,7 @@ const Maintenance: React.FC = () => {
         });
       } else {
         // Create new task
-        await createTask(formattedData);
+        await createTask(data);
         toast({
           title: "Task created",
           description: "The new maintenance task has been successfully created."
@@ -87,8 +79,10 @@ const Maintenance: React.FC = () => {
       
       setFormOpen(false);
       setCurrentTask(null);
-      refreshTasks();
+      // Make sure to refresh tasks after creating or updating
+      await refreshTasks();
     } catch (error) {
+      console.error("Error saving task:", error);
       toast({
         title: "Error",
         description: "Failed to save the maintenance task.",
@@ -140,6 +134,7 @@ const Maintenance: React.FC = () => {
         onNewTask={() => handleAddEdit()} 
         onScanAsset={() => setScannerOpen(true)}
         isLoading={isLoading}
+        onRefresh={refreshTasks}
       />
 
       <MaintenanceFilters
