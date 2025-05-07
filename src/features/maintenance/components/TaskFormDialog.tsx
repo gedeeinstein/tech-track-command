@@ -340,7 +340,8 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              {/* Fix here: Use "none" instead of empty string */}
+                              <SelectItem value="none">None</SelectItem>
                               {assets.map(asset => (
                                 <SelectItem key={asset.id} value={asset.id}>
                                   {asset.name}
@@ -371,7 +372,8 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              {/* Fix here: Use "none" instead of empty string */}
+                              <SelectItem value="none">None</SelectItem>
                               {assemblies.map(assembly => (
                                 <SelectItem key={assembly.id} value={assembly.id}>
                                   {assembly.name}

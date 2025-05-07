@@ -58,10 +58,18 @@ const Maintenance: React.FC = () => {
 
   const handleSaveTask = async (data: any) => {
     try {
+      // Handle "none" values for optional fields
+      const formattedData = {
+        ...data,
+        // Convert "none" to null for asset_id and assembly_id
+        asset_id: data.asset_id === "none" ? null : data.asset_id,
+        assembly_id: data.assembly_id === "none" ? null : data.assembly_id
+      };
+      
       if (currentTask?.id) {
         // Update existing task
         await updateTask({
-          ...data,
+          ...formattedData,
           id: currentTask.id
         });
         toast({
@@ -70,7 +78,7 @@ const Maintenance: React.FC = () => {
         });
       } else {
         // Create new task
-        await createTask(data);
+        await createTask(formattedData);
         toast({
           title: "Task created",
           description: "The new maintenance task has been successfully created."

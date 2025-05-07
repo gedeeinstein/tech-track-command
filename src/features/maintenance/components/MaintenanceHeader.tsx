@@ -7,12 +7,14 @@ interface MaintenanceHeaderProps {
   onNewTask: () => void;
   onScanAsset: () => void;
   isLoading: boolean;
+  onRefresh?: () => void; // Added refresh callback
 }
 
 const MaintenanceHeader: React.FC<MaintenanceHeaderProps> = ({ 
   onNewTask, 
   onScanAsset,
-  isLoading 
+  isLoading,
+  onRefresh
 }) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -38,6 +40,17 @@ const MaintenanceHeader: React.FC<MaintenanceHeaderProps> = ({
           <QrCode className="h-4 w-4" />
           <span>Scan Asset</span>
         </Button>
+        {onRefresh && (
+          <Button
+            onClick={onRefresh}
+            variant="outline"
+            className="flex items-center gap-2"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </Button>
+        )}
       </div>
     </div>
   );

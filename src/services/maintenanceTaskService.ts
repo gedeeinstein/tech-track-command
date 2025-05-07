@@ -66,12 +66,13 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
       status: task.status,
       priority: task.priority,
       assigned_to: task.assignedTo,
-      asset_id: task.asset?.id,
-      assembly_id: task.assembly?.id,
-      scheduled_date: task.scheduledDate,
-      completed_date: task.completedDate,
+      // Handle "none" value for optional fields
+      asset_id: task.asset_id === "none" ? null : task.asset_id,
+      assembly_id: task.assembly_id === "none" ? null : task.assembly_id,
+      scheduled_date: task.scheduled_date,
+      completed_date: task.completed_date,
       recurring: task.recurring,
-      next_occurrence: task.nextOccurrence
+      next_occurrence: task.next_occurrence
     };
     
     // Use 'any' to bypass TypeScript's type checking temporarily
@@ -134,12 +135,13 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
       status: task.status,
       priority: task.priority,
       assigned_to: task.assignedTo,
-      asset_id: task.asset?.id,
-      assembly_id: task.assembly?.id,
-      scheduled_date: task.scheduledDate,
-      completed_date: task.completedDate,
+      // Handle "none" value for optional fields
+      asset_id: task.asset_id === "none" ? null : task.asset_id,
+      assembly_id: task.assembly_id === "none" ? null : task.assembly_id,
+      scheduled_date: task.scheduled_date,
+      completed_date: task.completed_date,
       recurring: task.recurring,
-      next_occurrence: task.nextOccurrence
+      next_occurrence: task.next_occurrence
     };
     
     // Use 'any' to bypass TypeScript's type checking temporarily
