@@ -79,6 +79,7 @@ const Maintenance: React.FC = () => {
       
       setFormOpen(false);
       setCurrentTask(null);
+      setScannedAsset(null);
       // Make sure to refresh tasks after creating or updating
       await refreshTasks();
     } catch (error) {

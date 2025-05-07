@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Task } from '../types';
 import { getTasks, deleteTask, markTaskCompleted } from '@/services/maintenanceTaskService';
 import { useToast } from '@/hooks/use-toast';
@@ -27,17 +27,13 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch tasks on hook initialization
-  useEffect(() => {
-    refreshTasks();
-  }, []);
-
-  // Refresh tasks from the database
-  const refreshTasks = async () => {
+  // Implement refreshTasks as a useCallback to avoid recreating the function on every render
+  const refreshTasks = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getTasks();
       setTasks(data);
+      console.log("Tasks refreshed:", data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast({
@@ -48,7 +44,12 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  // Fetch tasks on hook initialization
+  useEffect(() => {
+    refreshTasks();
+  }, [refreshTasks]);
 
   // Filter tasks based on search and filters
   const filteredTasks = tasks.filter(task => {

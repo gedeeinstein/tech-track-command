@@ -50,24 +50,26 @@ export const getTasks = async (): Promise<Task[]> => {
  */
 export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> => {
   try {
-    // Generate a new ID using a pattern similar to the mock data
-    const newId = `MT${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+    // Handle "none" values for asset_id and assembly_id
+    const asset_id = task.asset?.id === "none" ? null : task.asset?.id || null;
+    const assembly_id = task.assembly?.id === "none" ? null : task.assembly?.id || null;
     
     // Transform the data to match the database schema
     const newTask = {
-      id: newId,
       title: task.title,
       description: task.description,
       status: task.status,
       priority: task.priority,
       assigned_to: task.assignedTo,
-      asset_id: task.asset?.id || null,
-      assembly_id: task.assembly?.id || null,
+      asset_id: asset_id,
+      assembly_id: assembly_id,
       scheduled_date: task.scheduledDate,
       completed_date: task.completedDate,
       recurring: task.recurring,
       next_occurrence: task.nextOccurrence
     };
+    
+    console.log('Creating task with data:', newTask);
     
     // Use 'any' to bypass TypeScript's type checking temporarily
     const { data, error } = await (supabase as any)
@@ -83,6 +85,8 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
     if (error) {
       throw error;
     }
+    
+    console.log('Task created successfully:', data);
     
     // Transform the data to match the Task type
     const createdTask: Task = {
@@ -112,6 +116,10 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
  */
 export const updateTask = async (task: Task): Promise<Task | null> => {
   try {
+    // Handle "none" values for asset_id and assembly_id
+    const asset_id = task.asset?.id === "none" ? null : task.asset?.id || null;
+    const assembly_id = task.assembly?.id === "none" ? null : task.assembly?.id || null;
+    
     // Transform the data to match the database schema
     const updateData = {
       title: task.title,
@@ -119,8 +127,8 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
       status: task.status,
       priority: task.priority,
       assigned_to: task.assignedTo,
-      asset_id: task.asset?.id || null,
-      assembly_id: task.assembly?.id || null,
+      asset_id: asset_id,
+      assembly_id: assembly_id,
       scheduled_date: task.scheduledDate,
       completed_date: task.completedDate,
       recurring: task.recurring,

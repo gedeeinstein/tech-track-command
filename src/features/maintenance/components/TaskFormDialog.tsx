@@ -151,19 +151,23 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
+      // Process assetId and assemblyId
+      const assetId = data.assetId === "none" ? null : data.assetId || null;
+      const assemblyId = data.assemblyId === "none" ? null : data.assemblyId || null;
+
       // Format dates and prepare data for submission
       const formattedData = {
         title: data.title,
         description: data.description,
         status: data.status,
         priority: data.priority,
-        assigned_to: data.assignedTo,
-        asset_id: data.assetId || null,
-        assembly_id: data.assemblyId || null,
-        scheduled_date: date ? format(date, "yyyy-MM-dd") : null,
+        assignedTo: data.assignedTo,
+        asset: assetId ? { id: assetId } : null,
+        assembly: assemblyId ? { id: assemblyId } : null,
+        scheduledDate: date ? format(date, "yyyy-MM-dd") : null,
         recurring: data.recurring,
-        next_occurrence: data.nextOccurrence || null,
-        completed_date: data.status === "Completed" ? new Date().toISOString().split('T')[0] : null
+        nextOccurrence: data.nextOccurrence || null,
+        completedDate: data.status === "Completed" ? new Date().toISOString().split('T')[0] : null
       };
 
       onSave(formattedData);
@@ -340,7 +344,6 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {/* Fix here: Use "none" instead of empty string */}
                               <SelectItem value="none">None</SelectItem>
                               {assets.map(asset => (
                                 <SelectItem key={asset.id} value={asset.id}>
@@ -372,7 +375,6 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {/* Fix here: Use "none" instead of empty string */}
                               <SelectItem value="none">None</SelectItem>
                               {assemblies.map(assembly => (
                                 <SelectItem key={assembly.id} value={assembly.id}>
