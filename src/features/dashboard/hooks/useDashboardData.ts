@@ -48,60 +48,6 @@ export interface DashboardData {
   error: Error | null;
 }
 
-// Mock data as fallback
-const mockAssetsByTypeData = [
-  { name: "Laptops", value: 42 },
-  { name: "Desktops", value: 28 },
-  { name: "Servers", value: 15 },
-  { name: "Networking", value: 22 },
-  { name: "Other", value: 13 }
-];
-
-const mockMaintenanceByMonthData = [
-  { name: "Jan", completed: 12, scheduled: 15 },
-  { name: "Feb", completed: 19, scheduled: 20 },
-  { name: "Mar", completed: 15, scheduled: 18 },
-  { name: "Apr", completed: 20, scheduled: 20 },
-  { name: "May", completed: 18, scheduled: 22 },
-  { name: "Jun", completed: 14, scheduled: 16 }
-];
-
-const mockAssetAcquisitionData = [
-  { name: "Jan", value: 5 },
-  { name: "Feb", value: 8 },
-  { name: "Mar", value: 3 },
-  { name: "Apr", value: 12 },
-  { name: "May", value: 7 },
-  { name: "Jun", value: 10 }
-];
-
-const mockRecentTasks = [
-  { 
-    name: "Server Backup Verification", 
-    asset: "Database Server", 
-    status: "Completed", 
-    date: "Today" 
-  },
-  { 
-    name: "Network Switch Firmware Update", 
-    asset: "Core Switch", 
-    status: "In Progress", 
-    date: "Today" 
-  },
-  { 
-    name: "Workstation Security Scan", 
-    asset: "Finance Dept Laptops", 
-    status: "Scheduled", 
-    date: "Tomorrow" 
-  },
-  { 
-    name: "UPS Battery Replacement", 
-    asset: "Server Room UPS", 
-    status: "Overdue", 
-    date: "Yesterday" 
-  }
-];
-
 // Helper function to format date for display
 const formatTaskDate = (dateStr: string): string => {
   const today = new Date();
@@ -125,6 +71,23 @@ const formatTaskDate = (dateStr: string): string => {
   return new Date(dateStr).toLocaleDateString();
 };
 
+// Helper function to get month names for last 6 months
+const getLast6MonthNames = (): string[] => {
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(month.toLocaleString('default', { month: 'short' }));
+  }
+  return months;
+};
+
+// Helper to convert date string to month/year format
+const getMonthFromDateString = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleString('default', { month: 'short' });
+};
+
 // Main hook to get dashboard data
 export const useDashboardData = (): DashboardData => {
   const [summary, setSummary] = useState<DashboardSummary>({
@@ -138,10 +101,10 @@ export const useDashboardData = (): DashboardData => {
     highPriorityAlerts: 0
   });
   
-  const [assetsByType, setAssetsByType] = useState<AssetTypeDistribution[]>(mockAssetsByTypeData);
-  const [maintenanceByMonth, setMaintenanceByMonth] = useState<MaintenanceStats[]>(mockMaintenanceByMonthData);
-  const [assetAcquisition, setAssetAcquisition] = useState<AssetAcquisition[]>(mockAssetAcquisitionData);
-  const [recentTasks, setRecentTasks] = useState<RecentTask[]>(mockRecentTasks);
+  const [assetsByType, setAssetsByType] = useState<AssetTypeDistribution[]>([]);
+  const [maintenanceByMonth, setMaintenanceByMonth] = useState<MaintenanceStats[]>([]);
+  const [assetAcquisition, setAssetAcquisition] = useState<AssetAcquisition[]>([]);
+  const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -247,8 +210,59 @@ export const useDashboardData = (): DashboardData => {
           setRecentTasks(recentTasksData);
         }
         
-        // For maintenance stats and asset acquisition, we'll leave mock data for now
-        // as they require more complex date calculations
+        // Process maintenance data by month
+        const last6Months = getLast6MonthNames();
+        
+        // Initialize maintenance data structure with 0 values for each month
+        const maintenanceData: Record<string, { completed: number, scheduled: number }> = {};
+        last6Months.forEach(month => {
+          maintenanceData[month] = { completed: 0, scheduled: 0 };
+        });
+        
+        // Count tasks by month
+        tasks.forEach(task => {
+          const taskMonth = getMonthFromDateString(task.scheduled_date);
+          if (last6Months.includes(taskMonth)) {
+            // Count all tasks as scheduled
+            maintenanceData[taskMonth].scheduled++;
+            
+            // Count completed tasks
+            if (task.status === "Completed") {
+              maintenanceData[taskMonth].completed++;
+            }
+          }
+        });
+        
+        // Convert to array format for chart
+        const maintenanceStats = Object.entries(maintenanceData).map(([name, data]) => ({
+          name,
+          completed: data.completed,
+          scheduled: data.scheduled
+        }));
+        
+        setMaintenanceByMonth(maintenanceStats);
+        
+        // Process asset acquisition data by month
+        const acquisitionData: Record<string, number> = {};
+        last6Months.forEach(month => {
+          acquisitionData[month] = 0;
+        });
+        
+        // Count assets by purchase month
+        assets.forEach(asset => {
+          const purchaseMonth = getMonthFromDateString(asset.purchase_date);
+          if (last6Months.includes(purchaseMonth)) {
+            acquisitionData[purchaseMonth]++;
+          }
+        });
+        
+        // Convert to array format for chart
+        const acquisitionStats = Object.entries(acquisitionData).map(([name, value]) => ({
+          name,
+          value
+        }));
+        
+        setAssetAcquisition(acquisitionStats);
         
       } catch (err: any) {
         console.error("Error fetching dashboard data:", err);
