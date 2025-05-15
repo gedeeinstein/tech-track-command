@@ -170,6 +170,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
         completedDate: data.status === "Completed" ? new Date().toISOString().split('T')[0] : null
       };
 
+      console.log("Submitting task data:", formattedData);
       onSave(formattedData);
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -344,7 +345,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem key="none" value="none">None</SelectItem>
                               {assets.map(asset => (
                                 <SelectItem key={asset.id} value={asset.id}>
                                   {asset.name}
@@ -375,7 +376,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem key="none" value="none">None</SelectItem>
                               {assemblies.map(assembly => (
                                 <SelectItem key={assembly.id} value={assembly.id}>
                                   {assembly.name}

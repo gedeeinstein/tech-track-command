@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
  */
 export const getTasks = async (): Promise<Task[]> => {
   try {
+    console.log("Fetching maintenance tasks...");
     // TypeScript doesn't know about our new tables yet
     // We need to use 'any' to bypass TypeScript's type checking temporarily
     const { data, error } = await (supabase as any)
@@ -19,8 +20,11 @@ export const getTasks = async (): Promise<Task[]> => {
       `);
     
     if (error) {
+      console.error("Error fetching tasks:", error);
       throw error;
     }
+    
+    console.log("Fetched tasks:", data);
     
     // Transform the data to match the Task type
     const tasks: Task[] = data.map((item: any) => ({
@@ -63,7 +67,7 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
       assigned_to: task.assignedTo,
       asset_id: asset_id,
       assembly_id: assembly_id,
-      scheduled_date: task.scheduledDate,
+      scheduled_date: task.scheduledDate || new Date().toISOString().split('T')[0], // Use current date if not provided
       completed_date: task.completedDate,
       recurring: task.recurring,
       next_occurrence: task.nextOccurrence
@@ -83,6 +87,7 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
       .single();
     
     if (error) {
+      console.error("Error creating task:", error);
       throw error;
     }
     
@@ -129,7 +134,7 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
       assigned_to: task.assignedTo,
       asset_id: asset_id,
       assembly_id: assembly_id,
-      scheduled_date: task.scheduledDate,
+      scheduled_date: task.scheduledDate || new Date().toISOString().split('T')[0], // Use current date if not provided
       completed_date: task.completedDate,
       recurring: task.recurring,
       next_occurrence: task.nextOccurrence
@@ -148,6 +153,7 @@ export const updateTask = async (task: Task): Promise<Task | null> => {
       .single();
     
     if (error) {
+      console.error("Error updating task:", error);
       throw error;
     }
     
@@ -197,6 +203,7 @@ export const markTaskCompleted = async (id: string): Promise<Task | null> => {
       .single();
     
     if (error) {
+      console.error("Error marking task as completed:", error);
       throw error;
     }
     
@@ -235,6 +242,7 @@ export const deleteTask = async (id: string): Promise<boolean> => {
       .eq('id', id);
     
     if (error) {
+      console.error("Error deleting task:", error);
       throw error;
     }
     

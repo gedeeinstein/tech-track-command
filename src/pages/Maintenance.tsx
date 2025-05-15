@@ -47,7 +47,7 @@ const Maintenance: React.FC = () => {
     if (task?.scheduledDate) {
       setDate(new Date(task.scheduledDate));
     } else {
-      setDate(undefined);
+      setDate(new Date()); // Default to today's date for new tasks
     }
   };
 
@@ -58,6 +58,8 @@ const Maintenance: React.FC = () => {
 
   const handleSaveTask = async (data: any) => {
     try {
+      console.log("Saving task with data:", data);
+      
       if (currentTask?.id) {
         // Update existing task
         await updateTask({
@@ -109,7 +111,7 @@ const Maintenance: React.FC = () => {
           assignedTo: "",
           asset: null, // Will be set in the form based on assetInfo
           assembly: null,
-          scheduledDate: "",
+          scheduledDate: new Date().toISOString().split('T')[0], // Default to today
           completedDate: null,
           recurring: "None",
           nextOccurrence: null

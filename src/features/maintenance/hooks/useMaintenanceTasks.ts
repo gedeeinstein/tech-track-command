@@ -31,6 +31,7 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
   const refreshTasks = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log("Refreshing maintenance tasks...");
       const data = await getTasks();
       setTasks(data);
       console.log("Tasks refreshed:", data);
