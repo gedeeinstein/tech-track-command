@@ -1,5 +1,6 @@
 
-import { useToast as useShadcnToast } from "@/components/ui/use-toast"
+// Import directly from the shadcn toast component
+import { useToast as useShadcnToast, toast } from "@/components/ui/toast"
 
 export const useToast = useShadcnToast;
-export { toast } from "@/components/ui/use-toast"
+export { toast };
