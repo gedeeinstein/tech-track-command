@@ -114,7 +114,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
                   <User className="h-4 w-4 text-muted-foreground" />
                   <h3 className="text-sm font-medium">Assigned To</h3>
                 </div>
-                <p className="text-sm">{task.assignedTo}</p>
+                <p className="text-sm">{task.assignedToName || task.assignedTo || "Unassigned"}</p>
               </CardContent>
             </Card>
 

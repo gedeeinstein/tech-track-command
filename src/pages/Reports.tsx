@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -38,41 +38,12 @@ import {
   FileText,
   Calendar,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Mock data for charts
-const MOCK_ASSET_STATUS_DATA = [
-  { name: "Active", value: 90 },
-  { name: "Maintenance", value: 15 },
-  { name: "Decommissioned", value: 20 }
-];
-
-const MOCK_ASSET_TYPE_DATA = [
-  { name: "Laptops", value: 42 },
-  { name: "Desktops", value: 28 },
-  { name: "Servers", value: 15 },
-  { name: "Networking", value: 22 },
-  { name: "Printers", value: 13 },
-  { name: "Mobile", value: 8 },
-  { name: "Other", value: 7 }
-];
-
-const MOCK_MAINTENANCE_COMPLETION_DATA = [
-  { month: "Jan", completed: 12, scheduled: 15 },
-  { month: "Feb", completed: 19, scheduled: 20 },
-  { month: "Mar", completed: 15, scheduled: 18 },
-  { month: "Apr", completed: 10, scheduled: 16 }
-];
-
-const MOCK_ASSEMBLY_COMPONENT_DATA = [
-  { name: "Server Rack #1", components: 8 },
-  { name: "Finance Workstations", components: 5 },
-  { name: "Conference Room A", components: 4 },
-  { name: "Developer Workstations", components: 6 },
-  { name: "Network Core", components: 7 }
-];
+import { useReportData } from "@/features/reports/hooks/useReportData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Colors for charts
 const STATUS_COLORS = ["#10B981", "#F59E0B", "#EF4444"];
@@ -93,9 +64,33 @@ const TIME_RANGES = ["Last 30 Days", "Last Quarter", "Last 6 Months", "Year to D
 
 const Reports: React.FC = () => {
   const [activeReport, setActiveReport] = useState("asset-status");
-  const [timeRange, setTimeRange] = useState("Last 30 Days");
+  const [timeRange, setTimeRange] = useState("Last 6 Months");
+  
+  const { 
+    isLoading, 
+    error, 
+    assetStatusData, 
+    assetTypeData, 
+    maintenanceData, 
+    assemblyData,
+    warrantyData,
+    inventoryData,
+    refreshData 
+  } = useReportData(activeReport, timeRange);
 
+  const handleRefreshData = () => {
+    refreshData();
+  };
+  
   const renderActiveReport = () => {
+    if (isLoading) {
+      return <LoadingState />;
+    }
+    
+    if (error) {
+      return <ErrorState message={error} onRetry={refreshData} />;
+    }
+    
     switch (activeReport) {
       case "asset-status":
         return (
@@ -113,27 +108,31 @@ const Reports: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={MOCK_ASSET_STATUS_DATA}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {MOCK_ASSET_STATUS_DATA.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} units`, "Count"]} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {assetStatusData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={assetStatusData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={120}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {assetStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value} units`, "Count"]} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState message="No asset status data available" />
+              )}
             </CardContent>
           </Card>
         );
@@ -154,27 +153,31 @@ const Reports: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={MOCK_ASSET_TYPE_DATA}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {MOCK_ASSET_TYPE_DATA.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={TYPE_COLORS[index % TYPE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} units`, "Count"]} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {assetTypeData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={assetTypeData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={120}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {assetTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={TYPE_COLORS[index % TYPE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value} units`, "Count"]} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState message="No asset type data available" />
+              )}
             </CardContent>
           </Card>
         );
@@ -195,27 +198,31 @@ const Reports: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={MOCK_MAINTENANCE_COMPLETION_DATA}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="scheduled" name="Scheduled Tasks" fill="#94A3B8" />
-                    <Bar dataKey="completed" name="Completed Tasks" fill="#10B981" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {maintenanceData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={maintenanceData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="scheduled" name="Scheduled Tasks" fill="#94A3B8" />
+                      <Bar dataKey="completed" name="Completed Tasks" fill="#10B981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState message="No maintenance data available" />
+              )}
             </CardContent>
           </Card>
         );
@@ -236,42 +243,49 @@ const Reports: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={MOCK_ASSEMBLY_COMPONENT_DATA}
-                    layout="vertical"
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 120,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={100} />
-                    <Tooltip />
-                    <Bar dataKey="components" name="Component Count" fill="#3B82F6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {assemblyData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={assemblyData}
+                      layout="vertical"
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 120,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" width={100} />
+                      <Tooltip />
+                      <Bar dataKey="components" name="Component Count" fill="#3B82F6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState message="No assembly data available" />
+              )}
             </CardContent>
           </Card>
         );
       
       case "warranty":
       case "inventory":
+        const isWarranty = activeReport === "warranty";
+        const listData = isWarranty ? warrantyData : inventoryData;
+        
         return (
           <Card className="col-span-3">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg">
-                    {activeReport === "warranty" ? "Warranty Expiration Report" : "Full Inventory List"}
+                    {isWarranty ? "Warranty Expiration Report" : "Full Inventory List"}
                   </CardTitle>
                   <CardDescription>
-                    {activeReport === "warranty" 
+                    {isWarranty 
                       ? "Assets with upcoming warranty expirations" 
                       : "Complete list of all assets in inventory"}
                   </CardDescription>
@@ -289,102 +303,70 @@ const Reports: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-3 font-medium">ID</th>
-                      <th className="text-left p-3 font-medium">Name</th>
-                      <th className="text-left p-3 font-medium">Type</th>
-                      {activeReport === "warranty" ? (
-                        <>
-                          <th className="text-left p-3 font-medium">Purchase Date</th>
-                          <th className="text-left p-3 font-medium">Warranty Until</th>
-                          <th className="text-left p-3 font-medium">Status</th>
-                        </>
+              {listData.length > 0 ? (
+                <div className="rounded-md border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-3 font-medium">ID</th>
+                        <th className="text-left p-3 font-medium">Name</th>
+                        <th className="text-left p-3 font-medium">Type</th>
+                        {isWarranty ? (
+                          <>
+                            <th className="text-left p-3 font-medium">Purchase Date</th>
+                            <th className="text-left p-3 font-medium">Warranty Until</th>
+                            <th className="text-left p-3 font-medium">Status</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="text-left p-3 font-medium">Status</th>
+                            <th className="text-left p-3 font-medium">Location</th>
+                            <th className="text-left p-3 font-medium">Assigned To</th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isWarranty ? (
+                        warrantyData.slice(0, 3).map(item => (
+                          <tr key={item.id} className="border-b">
+                            <td className="p-3">{item.id}</td>
+                            <td className="p-3">{item.name}</td>
+                            <td className="p-3">{item.type}</td>
+                            <td className="p-3">{item.purchaseDate}</td>
+                            <td className="p-3">{item.warrantyUntil}</td>
+                            <td className="p-3">
+                              <span className={`status-badge status-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                                {item.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
                       ) : (
-                        <>
-                          <th className="text-left p-3 font-medium">Status</th>
-                          <th className="text-left p-3 font-medium">Location</th>
-                          <th className="text-left p-3 font-medium">Assigned To</th>
-                        </>
+                        inventoryData.slice(0, 3).map(item => (
+                          <tr key={item.id} className="border-b">
+                            <td className="p-3">{item.id}</td>
+                            <td className="p-3">{item.name}</td>
+                            <td className="p-3">{item.type}</td>
+                            <td className="p-3">
+                              <span className={`status-badge status-${item.status.toLowerCase()}`}>
+                                {item.status}
+                              </span>
+                            </td>
+                            <td className="p-3">{item.location}</td>
+                            <td className="p-3">{item.assignedTo}</td>
+                          </tr>
+                        ))
                       )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeReport === "warranty" ? (
-                      <>
-                        <tr className="border-b">
-                          <td className="p-3">A1004</td>
-                          <td className="p-3">Dell PowerEdge R740</td>
-                          <td className="p-3">Server</td>
-                          <td className="p-3">2022-09-05</td>
-                          <td className="p-3">2025-09-05</td>
-                          <td className="p-3">
-                            <span className="status-badge status-active">Valid</span>
-                          </td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="p-3">A1003</td>
-                          <td className="p-3">HP LaserJet Pro</td>
-                          <td className="p-3">Printer</td>
-                          <td className="p-3">2021-11-20</td>
-                          <td className="p-3">2024-11-20</td>
-                          <td className="p-3">
-                            <span className="status-badge status-maintenance">Expiring Soon</span>
-                          </td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="p-3">A1006</td>
-                          <td className="p-3">Polycom Conference System</td>
-                          <td className="p-3">Audio/Video</td>
-                          <td className="p-3">2019-06-18</td>
-                          <td className="p-3">2022-06-18</td>
-                          <td className="p-3">
-                            <span className="status-badge status-decommissioned">Expired</span>
-                          </td>
-                        </tr>
-                      </>
-                    ) : (
-                      <>
-                        <tr className="border-b">
-                          <td className="p-3">A1001</td>
-                          <td className="p-3">Dell XPS 15</td>
-                          <td className="p-3">Laptop</td>
-                          <td className="p-3">
-                            <span className="status-badge status-active">Active</span>
-                          </td>
-                          <td className="p-3">IT Department</td>
-                          <td className="p-3">John Smith</td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="p-3">A1002</td>
-                          <td className="p-3">Cisco Switch 24-Port</td>
-                          <td className="p-3">Networking</td>
-                          <td className="p-3">
-                            <span className="status-badge status-active">Active</span>
-                          </td>
-                          <td className="p-3">Server Room</td>
-                          <td className="p-3">Network Infrastructure</td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="p-3">A1003</td>
-                          <td className="p-3">HP LaserJet Pro</td>
-                          <td className="p-3">Printer</td>
-                          <td className="p-3">
-                            <span className="status-badge status-maintenance">Maintenance</span>
-                          </td>
-                          <td className="p-3">Finance Department</td>
-                          <td className="p-3">Finance Team</td>
-                        </tr>
-                      </>
-                    )}
-                  </tbody>
-                </table>
-                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
-                  Showing 3 of 120+ items. Export the full report for complete data.
+                    </tbody>
+                  </table>
+                  <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                    Showing {listData.length > 3 ? '3' : listData.length} of {listData.length} items. Export the full report for complete data.
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <EmptyState message={`No ${isWarranty ? "warranty" : "inventory"} data available`} />
+              )}
             </CardContent>
           </Card>
         );
@@ -441,7 +423,7 @@ const Reports: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="time-range">Time Range</Label>
-                <Select defaultValue={timeRange} onValueChange={setTimeRange}>
+                <Select value={timeRange} onValueChange={setTimeRange}>
                   <SelectTrigger id="time-range" className="w-full">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -469,8 +451,17 @@ const Reports: React.FC = () => {
                 </Button>
               </div>
               
-              <Button variant="default" className="w-full flex items-center justify-center gap-2">
-                <RefreshCw className="h-4 w-4" />
+              <Button 
+                variant="default" 
+                className="w-full flex items-center justify-center gap-2"
+                onClick={handleRefreshData}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
                 <span>Generate Report</span>
               </Button>
             </CardContent>
@@ -487,5 +478,58 @@ const Reports: React.FC = () => {
     </div>
   );
 };
+
+const LoadingState = () => (
+  <Card className="col-span-3">
+    <CardHeader className="pb-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-4 w-60 mt-1" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="h-80 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading report data...</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <Card className="col-span-3">
+    <CardContent className="h-80 flex items-center justify-center">
+      <div className="flex flex-col items-center text-center">
+        <div className="rounded-full bg-red-100 p-3 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <p className="text-lg font-medium mb-2">Failed to load report</p>
+        <p className="text-muted-foreground mb-4">{message}</p>
+        <Button onClick={onRetry}>Try Again</Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const EmptyState = ({ message }: { message: string }) => (
+  <div className="h-80 flex items-center justify-center">
+    <div className="flex flex-col items-center text-center">
+      <div className="rounded-full bg-muted p-3 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      </div>
+      <p className="text-lg font-medium mb-2">No data available</p>
+      <p className="text-muted-foreground">{message}</p>
+    </div>
+  </div>
+);
 
 export default Reports;

@@ -1,18 +1,5 @@
 
-export interface Asset {
-  id: string;
-  name: string;
-}
-
-export interface Assembly {
-  id: string;
-  name: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-}
+import { Asset, Assembly } from "../assemblies/types";
 
 export interface Task {
   id: string;
@@ -21,6 +8,7 @@ export interface Task {
   status: string;
   priority: string;
   assignedTo: string;
+  assignedToName?: string; // Add assignedToName property
   asset: Asset | null;
   assembly: Assembly | null;
   scheduledDate: string;
@@ -30,6 +18,7 @@ export interface Task {
 }
 
 export interface ScannedAsset {
-  assetId: string;
-  inventoryNumber: string;
+  id: string;
+  name: string;
+  type: string;
 }

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Task } from '../types';
 import { getTasks, deleteTask, markTaskCompleted } from '@/services/maintenanceTaskService';
 import { useToast } from '@/hooks/use-toast';
+import { getUsers } from '@/services/userService';
 
 interface UseMaintenanceTasksReturn {
   tasks: Task[];
@@ -27,14 +28,39 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Map userIds to user names
+  const resolveUserNames = useCallback(async (tasksData: Task[]): Promise<Task[]> => {
+    try {
+      const users = await getUsers();
+      const userMap = new Map(users.map(user => [user.id, user.name]));
+      
+      return tasksData.map(task => {
+        if (task.assignedTo && userMap.has(task.assignedTo)) {
+          return {
+            ...task,
+            assignedToName: userMap.get(task.assignedTo) || task.assignedTo,
+          };
+        }
+        return {
+          ...task,
+          assignedToName: task.assignedTo || "Unassigned"
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return tasksData;
+    }
+  }, []);
+
   // Implement refreshTasks as a useCallback to avoid recreating the function on every render
   const refreshTasks = useCallback(async () => {
     setIsLoading(true);
     try {
       console.log("Refreshing maintenance tasks...");
       const data = await getTasks();
-      setTasks(data);
-      console.log("Tasks refreshed:", data);
+      const tasksWithUserNames = await resolveUserNames(data);
+      setTasks(tasksWithUserNames);
+      console.log("Tasks refreshed:", tasksWithUserNames);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast({
@@ -45,7 +71,7 @@ export const useMaintenanceTasks = (): UseMaintenanceTasksReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, resolveUserNames]);
 
   // Fetch tasks on hook initialization
   useEffect(() => {

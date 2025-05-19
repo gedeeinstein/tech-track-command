@@ -80,7 +80,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                 <PriorityBadge priority={task.priority} />
               </TableCell>
               <TableCell className="hidden lg:table-cell">
-                {task.assignedTo || "Unassigned"}
+                {task.assignedToName || "Unassigned"}
               </TableCell>
               <TableCell className="hidden lg:table-cell">
                 {task.asset?.name || task.assembly?.name || "None"}
