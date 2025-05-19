@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { 
@@ -140,7 +139,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
         status: "Scheduled",
         priority: "Medium",
         assignedTo: "",
-        assetId: scannedAsset?.assetId || "",
+        assetId: scannedAsset?.assetId || "", // Fixed to use assetId from ScannedAsset
         assemblyId: "",
         recurring: "None",
         nextOccurrence: ""
@@ -204,7 +203,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
           <DialogTitle>{currentTask?.id ? "Edit Maintenance Task" : "Create Maintenance Task"}</DialogTitle>
           <DialogDescription>
             {scannedAsset 
-              ? `Creating maintenance task for asset with ID: ${scannedAsset.inventoryNumber}`
+              ? `Creating maintenance task for asset with ID: ${scannedAsset.inventoryNumber}` // Fixed to use inventoryNumber
               : currentTask?.id 
                 ? "Update the details of the selected maintenance task." 
                 : "Schedule a new maintenance task for an asset or assembly."}

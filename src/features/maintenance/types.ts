@@ -21,4 +21,6 @@ export interface ScannedAsset {
   id: string;
   name: string;
   type: string;
+  assetId: string;        // Added this property
+  inventoryNumber: string; // Added this property
 }

@@ -14,7 +14,6 @@ import {
   WarrantyExpirationData,
   InventoryItemData
 } from '@/services/reportService';
-import { addDays, format } from 'date-fns';
 
 export const useReportData = (activeReport: string, timeRange: string) => {
   const [isLoading, setIsLoading] = useState(true);

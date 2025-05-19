@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { format, subDays, parseISO } from "date-fns";
+import { format, subDays, parseISO, addDays } from "date-fns"; // Added addDays import
 
 // Types for report data
 export interface AssetStatusData {
@@ -45,19 +45,26 @@ export interface InventoryItemData {
 // Get asset status distribution
 export const getAssetStatusDistribution = async (): Promise<AssetStatusData[]> => {
   try {
+    // Need to use count aggregation instead of group
     const { data, error } = await supabase
       .from('assets')
-      .select('status, count(*)')
-      .group('status');
+      .select('status, count')
+      .select('status');
       
     if (error) {
       console.error('Error fetching asset status distribution:', error);
       throw error;
     }
     
-    return data.map(item => ({
-      name: item.status,
-      value: item.count
+    // Process the data to get counts by status
+    const statusCounts: Record<string, number> = {};
+    data.forEach(item => {
+      statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+    });
+    
+    return Object.entries(statusCounts).map(([name, value]) => ({
+      name,
+      value
     }));
   } catch (error) {
     console.error('Error in getAssetStatusDistribution:', error);
@@ -68,19 +75,25 @@ export const getAssetStatusDistribution = async (): Promise<AssetStatusData[]> =
 // Get asset type distribution
 export const getAssetTypeDistribution = async (): Promise<AssetTypeData[]> => {
   try {
+    // Need to use count aggregation instead of group
     const { data, error } = await supabase
       .from('assets')
-      .select('type, count(*)')
-      .group('type');
+      .select('type');
       
     if (error) {
       console.error('Error fetching asset type distribution:', error);
       throw error;
     }
     
-    return data.map(item => ({
-      name: item.type,
-      value: item.count
+    // Process the data to get counts by type
+    const typeCounts: Record<string, number> = {};
+    data.forEach(item => {
+      typeCounts[item.type] = (typeCounts[item.type] || 0) + 1;
+    });
+    
+    return Object.entries(typeCounts).map(([name, value]) => ({
+      name,
+      value
     }));
   } catch (error) {
     console.error('Error in getAssetTypeDistribution:', error);
@@ -135,7 +148,7 @@ export const getMaintenanceCompletionData = async (timeRange: string = "Last 6 M
     
     // Create a map of months
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const monthData: Record<string, { scheduled: number; completed: number }> = {};
+    const monthData: Record<string, MaintenanceCompletionData> = {};
     
     // Initialize month data
     const currentMonth = today.getMonth();
@@ -196,13 +209,7 @@ export const getMaintenanceCompletionData = async (timeRange: string = "Last 6 M
     });
     
     // Convert to array and reverse to get chronological order
-    return Object.values(monthData)
-      .map(item => ({
-        month: item.month,
-        scheduled: item.scheduled,
-        completed: item.completed
-      }))
-      .reverse();
+    return Object.values(monthData).reverse();
   } catch (error) {
     console.error('Error in getMaintenanceCompletionData:', error);
     return [];
