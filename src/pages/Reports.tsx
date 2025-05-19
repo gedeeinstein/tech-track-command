@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -39,11 +38,23 @@ import {
   Calendar,
   Filter,
   RefreshCw,
-  Loader2
+  Loader2,
+  FilePdf
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReportData } from "@/features/reports/hooks/useReportData";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  exportToPDF,
+  exportToCSV,
+  prepareAssetStatusData,
+  prepareAssetTypeData,
+  prepareMaintenanceData,
+  prepareAssemblyComponentData,
+  prepareWarrantyData,
+  prepareInventoryData
+} from "@/utils/exportUtils";
+import { toast } from "sonner";
 
 // Colors for charts
 const STATUS_COLORS = ["#10B981", "#F59E0B", "#EF4444"];
@@ -81,6 +92,129 @@ const Reports: React.FC = () => {
   const handleRefreshData = () => {
     refreshData();
   };
+
+  const handleExportPDF = () => {
+    try {
+      let title = "";
+      let headers: string[] = [];
+      let rows: any[] = [];
+      let filename = "";
+
+      switch (activeReport) {
+        case "asset-status":
+          title = "Asset Status Distribution";
+          const statusData = prepareAssetStatusData(assetStatusData);
+          headers = statusData.headers;
+          rows = statusData.rows;
+          filename = "asset-status-report";
+          break;
+        
+        case "asset-type":
+          title = "Assets by Type";
+          const typeData = prepareAssetTypeData(assetTypeData);
+          headers = typeData.headers;
+          rows = typeData.rows;
+          filename = "asset-type-report";
+          break;
+          
+        case "maintenance":
+          title = "Maintenance Completion";
+          const maintData = prepareMaintenanceData(maintenanceData);
+          headers = maintData.headers;
+          rows = maintData.rows;
+          filename = "maintenance-report";
+          break;
+          
+        case "assemblies":
+          title = "Assembly Component Count";
+          const assemblyData = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyData.headers;
+          rows = assemblyData.rows;
+          filename = "assembly-report";
+          break;
+          
+        case "warranty":
+          title = "Warranty Expiration Report";
+          const warrantyData = prepareWarrantyData(warrantyData);
+          headers = warrantyData.headers;
+          rows = warrantyData.rows;
+          filename = "warranty-report";
+          break;
+          
+        case "inventory":
+          title = "Full Inventory List";
+          const inventoryData = prepareInventoryData(inventoryData);
+          headers = inventoryData.headers;
+          rows = inventoryData.rows;
+          filename = "inventory-report";
+          break;
+      }
+
+      exportToPDF(title, headers, rows, filename);
+      toast.success(`PDF report exported successfully`);
+    } catch (err) {
+      console.error("Error exporting PDF:", err);
+      toast.error("Failed to export PDF report");
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      let headers: string[] = [];
+      let rows: any[] = [];
+      let filename = "";
+
+      switch (activeReport) {
+        case "asset-status":
+          const statusData = prepareAssetStatusData(assetStatusData);
+          headers = statusData.headers;
+          rows = statusData.rows;
+          filename = "asset-status-report";
+          break;
+        
+        case "asset-type":
+          const typeData = prepareAssetTypeData(assetTypeData);
+          headers = typeData.headers;
+          rows = typeData.rows;
+          filename = "asset-type-report";
+          break;
+          
+        case "maintenance":
+          const maintData = prepareMaintenanceData(maintenanceData);
+          headers = maintData.headers;
+          rows = maintData.rows;
+          filename = "maintenance-report";
+          break;
+          
+        case "assemblies":
+          const assemblyData = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyData.headers;
+          rows = assemblyData.rows;
+          filename = "assembly-report";
+          break;
+          
+        case "warranty":
+          const warrantyData = prepareWarrantyData(warrantyData);
+          headers = warrantyData.headers;
+          rows = warrantyData.rows;
+          filename = "warranty-report";
+          break;
+          
+        case "inventory":
+          const inventoryData = prepareInventoryData(inventoryData);
+          headers = inventoryData.headers;
+          rows = inventoryData.rows;
+          filename = "inventory-report";
+          break;
+      }
+
+      exportToCSV(headers, rows, filename);
+      toast.success(`CSV report exported successfully`);
+    } catch (err) {
+      console.error("Error exporting CSV:", err);
+      toast.error("Failed to export CSV report");
+    }
+  };
   
   const renderActiveReport = () => {
     if (isLoading) {
@@ -101,10 +235,26 @@ const Reports: React.FC = () => {
                   <CardTitle className="text-lg">Asset Status Distribution</CardTitle>
                   <CardDescription>Overview of assets by their current status</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Download className="h-4 w-4" />
-                  <span>Export</span>
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportPDF}
+                  >
+                    <FilePdf className="h-4 w-4" />
+                    <span>PDF</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportCSV}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    <span>CSV</span>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -146,10 +296,26 @@ const Reports: React.FC = () => {
                   <CardTitle className="text-lg">Assets by Type</CardTitle>
                   <CardDescription>Distribution of assets across different categories</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Download className="h-4 w-4" />
-                  <span>Export</span>
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportPDF}
+                  >
+                    <FilePdf className="h-4 w-4" />
+                    <span>PDF</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportCSV}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    <span>CSV</span>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -191,10 +357,26 @@ const Reports: React.FC = () => {
                   <CardTitle className="text-lg">Maintenance Completion Rate</CardTitle>
                   <CardDescription>Scheduled vs completed maintenance tasks</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Download className="h-4 w-4" />
-                  <span>Export</span>
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportPDF}
+                  >
+                    <FilePdf className="h-4 w-4" />
+                    <span>PDF</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportCSV}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    <span>CSV</span>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -236,10 +418,26 @@ const Reports: React.FC = () => {
                   <CardTitle className="text-lg">Assembly Component Count</CardTitle>
                   <CardDescription>Number of components in each assembly</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Download className="h-4 w-4" />
-                  <span>Export</span>
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportPDF}
+                  >
+                    <FilePdf className="h-4 w-4" />
+                    <span>PDF</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportCSV}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    <span>CSV</span>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -291,13 +489,23 @@ const Reports: React.FC = () => {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportPDF}
+                  >
+                    <FilePdf className="h-4 w-4" />
+                    <span>PDF</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportCSV}
+                  >
                     <FileDown className="h-4 w-4" />
                     <span>CSV</span>
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <FileText className="h-4 w-4" />
-                    <span>PDF</span>
                   </Button>
                 </div>
               </div>
