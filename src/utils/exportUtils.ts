@@ -71,10 +71,16 @@ export const exportToCSV = (
   saveAs(blob, `${filename}-${today}.csv`);
 };
 
+// Type for export data preparation functions return value
+interface ExportDataResult {
+  headers: string[];
+  rows: any[][];
+}
+
 /**
  * Prepare data for asset status distribution report exports
  */
-export const prepareAssetStatusData = (data: { name: string; value: number }[]) => {
+export const prepareAssetStatusData = (data: { name: string; value: number }[]): ExportDataResult => {
   const headers = ['Status', 'Count'];
   const rows = data.map(item => [item.name, item.value.toString()]);
   return { headers, rows };
@@ -83,7 +89,7 @@ export const prepareAssetStatusData = (data: { name: string; value: number }[]) 
 /**
  * Prepare data for asset type distribution report exports
  */
-export const prepareAssetTypeData = (data: { name: string; value: number }[]) => {
+export const prepareAssetTypeData = (data: { name: string; value: number }[]): ExportDataResult => {
   const headers = ['Type', 'Count'];
   const rows = data.map(item => [item.name, item.value.toString()]);
   return { headers, rows };
@@ -92,7 +98,7 @@ export const prepareAssetTypeData = (data: { name: string; value: number }[]) =>
 /**
  * Prepare data for maintenance completion report exports
  */
-export const prepareMaintenanceData = (data: { month: string; completed: number; scheduled: number }[]) => {
+export const prepareMaintenanceData = (data: { month: string; completed: number; scheduled: number }[]): ExportDataResult => {
   const headers = ['Month', 'Scheduled Tasks', 'Completed Tasks'];
   const rows = data.map(item => [item.month, item.scheduled.toString(), item.completed.toString()]);
   return { headers, rows };
@@ -101,7 +107,7 @@ export const prepareMaintenanceData = (data: { month: string; completed: number;
 /**
  * Prepare data for assembly component report exports
  */
-export const prepareAssemblyComponentData = (data: { name: string; components: number }[]) => {
+export const prepareAssemblyComponentData = (data: { name: string; components: number }[]): ExportDataResult => {
   const headers = ['Assembly', 'Component Count'];
   const rows = data.map(item => [item.name, item.components.toString()]);
   return { headers, rows };
@@ -110,7 +116,7 @@ export const prepareAssemblyComponentData = (data: { name: string; components: n
 /**
  * Prepare data for warranty expiration report exports
  */
-export const prepareWarrantyData = (data: any[]) => {
+export const prepareWarrantyData = (data: any[]): ExportDataResult => {
   const headers = ['ID', 'Name', 'Type', 'Purchase Date', 'Warranty Until', 'Status'];
   const rows = data.map(item => [
     item.id,
@@ -126,7 +132,7 @@ export const prepareWarrantyData = (data: any[]) => {
 /**
  * Prepare data for inventory list report exports
  */
-export const prepareInventoryData = (data: any[]) => {
+export const prepareInventoryData = (data: any[]): ExportDataResult => {
   const headers = ['ID', 'Name', 'Type', 'Status', 'Location', 'Assigned To'];
   const rows = data.map(item => [
     item.id,

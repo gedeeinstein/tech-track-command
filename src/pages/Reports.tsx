@@ -39,7 +39,7 @@ import {
   Filter,
   RefreshCw,
   Loader2,
-  FilePdf
+  FileType
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReportData } from "@/features/reports/hooks/useReportData";
@@ -127,25 +127,25 @@ const Reports: React.FC = () => {
           
         case "assemblies":
           title = "Assembly Component Count";
-          const assemblyData = prepareAssemblyComponentData(assemblyData);
-          headers = assemblyData.headers;
-          rows = assemblyData.rows;
+          const assemblyDataForExport = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyDataForExport.headers;
+          rows = assemblyDataForExport.rows;
           filename = "assembly-report";
           break;
           
         case "warranty":
           title = "Warranty Expiration Report";
-          const warrantyData = prepareWarrantyData(warrantyData);
-          headers = warrantyData.headers;
-          rows = warrantyData.rows;
+          const warrantyDataForExport = prepareWarrantyData(warrantyData);
+          headers = warrantyDataForExport.headers;
+          rows = warrantyDataForExport.rows;
           filename = "warranty-report";
           break;
           
         case "inventory":
           title = "Full Inventory List";
-          const inventoryData = prepareInventoryData(inventoryData);
-          headers = inventoryData.headers;
-          rows = inventoryData.rows;
+          const inventoryDataForExport = prepareInventoryData(inventoryData);
+          headers = inventoryDataForExport.headers;
+          rows = inventoryDataForExport.rows;
           filename = "inventory-report";
           break;
       }
@@ -187,23 +187,23 @@ const Reports: React.FC = () => {
           break;
           
         case "assemblies":
-          const assemblyData = prepareAssemblyComponentData(assemblyData);
-          headers = assemblyData.headers;
-          rows = assemblyData.rows;
+          const assemblyDataForExport = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyDataForExport.headers;
+          rows = assemblyDataForExport.rows;
           filename = "assembly-report";
           break;
           
         case "warranty":
-          const warrantyData = prepareWarrantyData(warrantyData);
-          headers = warrantyData.headers;
-          rows = warrantyData.rows;
+          const warrantyDataForExport = prepareWarrantyData(warrantyData);
+          headers = warrantyDataForExport.headers;
+          rows = warrantyDataForExport.rows;
           filename = "warranty-report";
           break;
           
         case "inventory":
-          const inventoryData = prepareInventoryData(inventoryData);
-          headers = inventoryData.headers;
-          rows = inventoryData.rows;
+          const inventoryDataForExport = prepareInventoryData(inventoryData);
+          headers = inventoryDataForExport.headers;
+          rows = inventoryDataForExport.rows;
           filename = "inventory-report";
           break;
       }
@@ -242,7 +242,7 @@ const Reports: React.FC = () => {
                     className="flex items-center gap-1"
                     onClick={handleExportPDF}
                   >
-                    <FilePdf className="h-4 w-4" />
+                    <FileType className="h-4 w-4" />
                     <span>PDF</span>
                   </Button>
                   <Button 
@@ -303,7 +303,7 @@ const Reports: React.FC = () => {
                     className="flex items-center gap-1"
                     onClick={handleExportPDF}
                   >
-                    <FilePdf className="h-4 w-4" />
+                    <FileType className="h-4 w-4" />
                     <span>PDF</span>
                   </Button>
                   <Button 
@@ -364,7 +364,7 @@ const Reports: React.FC = () => {
                     className="flex items-center gap-1"
                     onClick={handleExportPDF}
                   >
-                    <FilePdf className="h-4 w-4" />
+                    <FileType className="h-4 w-4" />
                     <span>PDF</span>
                   </Button>
                   <Button 
@@ -425,7 +425,7 @@ const Reports: React.FC = () => {
                     className="flex items-center gap-1"
                     onClick={handleExportPDF}
                   >
-                    <FilePdf className="h-4 w-4" />
+                    <FileType className="h-4 w-4" />
                     <span>PDF</span>
                   </Button>
                   <Button 
@@ -495,7 +495,7 @@ const Reports: React.FC = () => {
                     className="flex items-center gap-1"
                     onClick={handleExportPDF}
                   >
-                    <FilePdf className="h-4 w-4" />
+                    <FileType className="h-4 w-4" />
                     <span>PDF</span>
                   </Button>
                   <Button 
