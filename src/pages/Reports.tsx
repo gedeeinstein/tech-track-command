@@ -127,25 +127,25 @@ const Reports: React.FC = () => {
           
         case "assemblies":
           title = "Assembly Component Count";
-          const assemblyDataResult = prepareAssemblyComponentData(assemblyData);
-          headers = assemblyDataResult.headers;
-          rows = assemblyDataResult.rows;
+          const assemblyResult = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyResult.headers;
+          rows = assemblyResult.rows;
           filename = "assembly-report";
           break;
           
         case "warranty":
           title = "Warranty Expiration Report";
-          const warrantyDataResult = prepareWarrantyData(warrantyData);
-          headers = warrantyDataResult.headers;
-          rows = warrantyDataResult.rows;
+          const warrantyResult = prepareWarrantyData(warrantyData);
+          headers = warrantyResult.headers;
+          rows = warrantyResult.rows;
           filename = "warranty-report";
           break;
           
         case "inventory":
           title = "Full Inventory List";
-          const inventoryDataResult = prepareInventoryData(inventoryData);
-          headers = inventoryDataResult.headers;
-          rows = inventoryDataResult.rows;
+          const inventoryResult = prepareInventoryData(inventoryData);
+          headers = inventoryResult.headers;
+          rows = inventoryResult.rows;
           filename = "inventory-report";
           break;
       }
@@ -187,23 +187,23 @@ const Reports: React.FC = () => {
           break;
           
         case "assemblies":
-          const assemblyDataResult = prepareAssemblyComponentData(assemblyData);
-          headers = assemblyDataResult.headers;
-          rows = assemblyDataResult.rows;
+          const assemblyResult = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyResult.headers;
+          rows = assemblyResult.rows;
           filename = "assembly-report";
           break;
           
         case "warranty":
-          const warrantyDataResult = prepareWarrantyData(warrantyData);
-          headers = warrantyDataResult.headers;
-          rows = warrantyDataResult.rows;
+          const warrantyResult = prepareWarrantyData(warrantyData);
+          headers = warrantyResult.headers;
+          rows = warrantyResult.rows;
           filename = "warranty-report";
           break;
           
         case "inventory":
-          const inventoryDataResult = prepareInventoryData(inventoryData);
-          headers = inventoryDataResult.headers;
-          rows = inventoryDataResult.rows;
+          const inventoryResult = prepareInventoryData(inventoryData);
+          headers = inventoryResult.headers;
+          rows = inventoryResult.rows;
           filename = "inventory-report";
           break;
       }

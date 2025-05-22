@@ -12,7 +12,7 @@ declare module 'jspdf' {
 }
 
 // Type for export data preparation functions return value
-interface ExportDataResult {
+export interface ExportDataResult {
   headers: string[];
   rows: any[][];
 }
