@@ -52,7 +52,8 @@ import {
   prepareMaintenanceData,
   prepareAssemblyComponentData,
   prepareWarrantyData,
-  prepareInventoryData
+  prepareInventoryData,
+  ExportDataResult
 } from "@/utils/exportUtils";
 import { toast } from "sonner";
 

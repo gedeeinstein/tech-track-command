@@ -23,7 +23,7 @@ export interface ExportDataResult {
 export const exportToPDF = (
   title: string,
   headers: string[],
-  data: any[],
+  data: any[][],
   filename: string
 ) => {
   const doc = new jsPDF();
@@ -61,7 +61,7 @@ export const exportToPDF = (
  */
 export const exportToCSV = (
   headers: string[],
-  data: any[],
+  data: any[][],
   filename: string
 ) => {
   const today = format(new Date(), 'yyyy-MM-dd');
