@@ -127,25 +127,25 @@ const Reports: React.FC = () => {
           
         case "assemblies":
           title = "Assembly Component Count";
-          const assemblyDataForExport = prepareAssemblyComponentData(assemblyData);
-          headers = assemblyDataForExport.headers;
-          rows = assemblyDataForExport.rows;
+          const assemblyDataResult = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyDataResult.headers;
+          rows = assemblyDataResult.rows;
           filename = "assembly-report";
           break;
           
         case "warranty":
           title = "Warranty Expiration Report";
-          const warrantyDataForExport = prepareWarrantyData(warrantyData);
-          headers = warrantyDataForExport.headers;
-          rows = warrantyDataForExport.rows;
+          const warrantyDataResult = prepareWarrantyData(warrantyData);
+          headers = warrantyDataResult.headers;
+          rows = warrantyDataResult.rows;
           filename = "warranty-report";
           break;
           
         case "inventory":
           title = "Full Inventory List";
-          const inventoryDataForExport = prepareInventoryData(inventoryData);
-          headers = inventoryDataForExport.headers;
-          rows = inventoryDataForExport.rows;
+          const inventoryDataResult = prepareInventoryData(inventoryData);
+          headers = inventoryDataResult.headers;
+          rows = inventoryDataResult.rows;
           filename = "inventory-report";
           break;
       }
@@ -187,23 +187,23 @@ const Reports: React.FC = () => {
           break;
           
         case "assemblies":
-          const assemblyDataForExport = prepareAssemblyComponentData(assemblyData);
-          headers = assemblyDataForExport.headers;
-          rows = assemblyDataForExport.rows;
+          const assemblyDataResult = prepareAssemblyComponentData(assemblyData);
+          headers = assemblyDataResult.headers;
+          rows = assemblyDataResult.rows;
           filename = "assembly-report";
           break;
           
         case "warranty":
-          const warrantyDataForExport = prepareWarrantyData(warrantyData);
-          headers = warrantyDataForExport.headers;
-          rows = warrantyDataForExport.rows;
+          const warrantyDataResult = prepareWarrantyData(warrantyData);
+          headers = warrantyDataResult.headers;
+          rows = warrantyDataResult.rows;
           filename = "warranty-report";
           break;
           
         case "inventory":
-          const inventoryDataForExport = prepareInventoryData(inventoryData);
-          headers = inventoryDataForExport.headers;
-          rows = inventoryDataForExport.rows;
+          const inventoryDataResult = prepareInventoryData(inventoryData);
+          headers = inventoryDataResult.headers;
+          rows = inventoryDataResult.rows;
           filename = "inventory-report";
           break;
       }

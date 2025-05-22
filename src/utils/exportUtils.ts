@@ -11,6 +11,12 @@ declare module 'jspdf' {
   }
 }
 
+// Type for export data preparation functions return value
+interface ExportDataResult {
+  headers: string[];
+  rows: any[][];
+}
+
 /**
  * Exports data to PDF format
  */
@@ -70,12 +76,6 @@ export const exportToCSV = (
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
   saveAs(blob, `${filename}-${today}.csv`);
 };
-
-// Type for export data preparation functions return value
-interface ExportDataResult {
-  headers: string[];
-  rows: any[][];
-}
 
 /**
  * Prepare data for asset status distribution report exports
