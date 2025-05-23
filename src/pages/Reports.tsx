@@ -98,7 +98,7 @@ const Reports: React.FC = () => {
     try {
       let title = "";
       let headers: string[] = [];
-      let rows: any[] = [];
+      let rows: any[][] = [];
       let filename = "";
 
       switch (activeReport) {
@@ -155,7 +155,7 @@ const Reports: React.FC = () => {
       toast.success(`PDF report exported successfully`);
     } catch (err) {
       console.error("Error exporting PDF:", err);
-      toast.error("Failed to export PDF report");
+      toast.error("Failed to export PDF report. Please try again.");
     }
   };
 

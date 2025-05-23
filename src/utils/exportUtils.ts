@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { saveAs } from 'file-saver';
@@ -26,34 +25,40 @@ export const exportToPDF = (
   data: any[][],
   filename: string
 ) => {
-  const doc = new jsPDF();
-  const today = format(new Date(), 'yyyy-MM-dd');
-  
-  // Add title
-  doc.setFontSize(18);
-  doc.text(title, 14, 22);
-  
-  // Add date
-  doc.setFontSize(11);
-  doc.text(`Generated: ${today}`, 14, 30);
-  
-  // Create table
-  doc.autoTable({
-    head: [headers],
-    body: data,
-    startY: 35,
-    headStyles: {
-      fillColor: [41, 128, 185],
-      textColor: 255,
-      fontStyle: 'bold'
-    },
-    alternateRowStyles: {
-      fillColor: [240, 240, 240]
-    }
-  });
-  
-  // Save PDF
-  doc.save(`${filename}-${today}.pdf`);
+  try {
+    const doc = new jsPDF();
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+    
+    // Add date
+    doc.setFontSize(11);
+    doc.text(`Generated: ${today}`, 14, 30);
+    
+    // Create table
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: 35,
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [240, 240, 240]
+      }
+    });
+    
+    // Save PDF
+    doc.save(`${filename}-${today}.pdf`);
+    return true;
+  } catch (error) {
+    console.error("Error exporting to PDF:", error);
+    throw error;
+  }
 };
 
 /**
@@ -64,17 +69,23 @@ export const exportToCSV = (
   data: any[][],
   filename: string
 ) => {
-  const today = format(new Date(), 'yyyy-MM-dd');
-  
-  // Create CSV content
-  const csvContent = [
-    headers.join(','),
-    ...data.map(row => row.join(','))
-  ].join('\n');
-  
-  // Create blob and download file
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-  saveAs(blob, `${filename}-${today}.csv`);
+  try {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => row.join(','))
+    ].join('\n');
+    
+    // Create blob and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    saveAs(blob, `${filename}-${today}.csv`);
+    return true;
+  } catch (error) {
+    console.error("Error exporting to CSV:", error);
+    throw error;
+  }
 };
 
 /**
