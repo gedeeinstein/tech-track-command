@@ -1,16 +1,12 @@
 
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-// Interfaces for each settings section
-export interface CompanyInfo {
+interface CompanyInfo {
   name: string;
   email: string;
   phone: string;
   website: string;
 }
 
-export interface SystemPreferences {
+interface SystemPreferences {
   maintenanceReminders: boolean;
   warrantyAlerts: boolean;
   autoLogout: boolean;
@@ -18,7 +14,7 @@ export interface SystemPreferences {
   timezone: string;
 }
 
-export interface NotificationPreferences {
+interface NotificationPreferences {
   emailNotifications: boolean;
   browserNotifications: boolean;
   notifyMaintenance: boolean;
@@ -28,7 +24,7 @@ export interface NotificationPreferences {
   notificationEmail: string;
 }
 
-export interface SecuritySettings {
+interface SecuritySettings {
   minPasswordLength: string;
   requireSpecialChars: boolean;
   requireNumbers: boolean;
@@ -40,216 +36,189 @@ export interface SecuritySettings {
   sessionTimeout: boolean;
 }
 
-export interface BackupSettings {
+interface BackupSettings {
   automatedBackups: boolean;
   backupFrequency: string;
   retentionPeriod: string;
 }
 
-// Default values
-const defaultCompanyInfo: CompanyInfo = {
-  name: "IT Inventory Inc.",
-  email: "contact@itinventory.example",
-  phone: "+1 (555) 123-4567",
-  website: "https://itinventory.example"
+const STORAGE_KEYS = {
+  COMPANY_INFO: 'settings_company_info',
+  SYSTEM_PREFERENCES: 'settings_system_preferences',
+  NOTIFICATION_PREFERENCES: 'settings_notification_preferences',
+  SECURITY_SETTINGS: 'settings_security_settings',
+  BACKUP_SETTINGS: 'settings_backup_settings',
 };
 
-const defaultSystemPreferences: SystemPreferences = {
-  maintenanceReminders: true,
-  warrantyAlerts: true,
-  autoLogout: false,
-  dateFormat: "MM/DD/YYYY",
-  timezone: "UTC-8"
-};
+// Company Info Service
+export const companyInfoService = {
+  async get(): Promise<CompanyInfo> {
+    const stored = localStorage.getItem(STORAGE_KEYS.COMPANY_INFO);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return {
+      name: "",
+      email: "",
+      phone: "",
+      website: ""
+    };
+  },
 
-const defaultNotificationPreferences: NotificationPreferences = {
-  emailNotifications: true,
-  browserNotifications: true,
-  notifyMaintenance: true,
-  notifyWarranty: true,
-  notifyInventory: false,
-  notifyUserAccount: false,
-  notificationEmail: "notifications@example.com"
-};
-
-const defaultSecuritySettings: SecuritySettings = {
-  minPasswordLength: "10",
-  requireSpecialChars: true,
-  requireNumbers: true,
-  passwordExpiry: "90",
-  requireTwoFactor: true,
-  requireTwoFactorAdmin: true,
-  maxFailedAttempts: "5",
-  lockoutTime: "30",
-  sessionTimeout: true
-};
-
-const defaultBackupSettings: BackupSettings = {
-  automatedBackups: true,
-  backupFrequency: "weekly",
-  retentionPeriod: "30"
-};
-
-// Get company information
-export const getCompanyInfo = async (): Promise<CompanyInfo> => {
-  try {
-    // In a real application with Supabase, you'd fetch this from a settings table
-    // For now, we'll return default values
-    return defaultCompanyInfo;
-  } catch (error) {
-    console.error('Error fetching company information:', error);
-    toast.error("Failed to load company information");
-    return defaultCompanyInfo;
+  async save(data: CompanyInfo): Promise<void> {
+    localStorage.setItem(STORAGE_KEYS.COMPANY_INFO, JSON.stringify(data));
+    console.log("Company info saved:", data);
   }
 };
 
-// Save company information
-export const saveCompanyInfo = async (info: CompanyInfo): Promise<boolean> => {
-  try {
-    // In a real application, you'd save this to Supabase
-    console.log("Saving company info:", info);
-    // Simulating API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return true;
-  } catch (error) {
-    console.error('Error saving company information:', error);
-    return false;
+// System Preferences Service
+export const systemPreferencesService = {
+  async get(): Promise<SystemPreferences> {
+    const stored = localStorage.getItem(STORAGE_KEYS.SYSTEM_PREFERENCES);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return {
+      maintenanceReminders: true,
+      warrantyAlerts: true,
+      autoLogout: false,
+      dateFormat: "MM/DD/YYYY",
+      timezone: "UTC-8"
+    };
+  },
+
+  async save(data: SystemPreferences): Promise<void> {
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_PREFERENCES, JSON.stringify(data));
+    console.log("System preferences saved:", data);
   }
 };
 
-// Get system preferences
-export const getSystemPreferences = async (): Promise<SystemPreferences> => {
-  try {
-    // In a real application with Supabase, you'd fetch this from a settings table
-    return defaultSystemPreferences;
-  } catch (error) {
-    console.error('Error fetching system preferences:', error);
-    toast.error("Failed to load system preferences");
-    return defaultSystemPreferences;
+// Notification Preferences Service
+export const notificationPreferencesService = {
+  async get(): Promise<NotificationPreferences> {
+    const stored = localStorage.getItem(STORAGE_KEYS.NOTIFICATION_PREFERENCES);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return {
+      emailNotifications: true,
+      browserNotifications: true,
+      notifyMaintenance: true,
+      notifyWarranty: true,
+      notifyInventory: false,
+      notifyUserAccount: false,
+      notificationEmail: ""
+    };
+  },
+
+  async save(data: NotificationPreferences): Promise<void> {
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATION_PREFERENCES, JSON.stringify(data));
+    console.log("Notification preferences saved:", data);
   }
 };
 
-// Save system preferences
-export const saveSystemPreferences = async (prefs: SystemPreferences): Promise<boolean> => {
-  try {
-    // In a real application, you'd save this to Supabase
-    console.log("Saving system preferences:", prefs);
-    // Simulating API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return true;
-  } catch (error) {
-    console.error('Error saving system preferences:', error);
-    return false;
+// Security Settings Service
+export const securitySettingsService = {
+  async get(): Promise<SecuritySettings> {
+    const stored = localStorage.getItem(STORAGE_KEYS.SECURITY_SETTINGS);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return {
+      minPasswordLength: "10",
+      requireSpecialChars: true,
+      requireNumbers: true,
+      passwordExpiry: "90",
+      requireTwoFactor: true,
+      requireTwoFactorAdmin: true,
+      maxFailedAttempts: "5",
+      lockoutTime: "30",
+      sessionTimeout: true
+    };
+  },
+
+  async save(data: SecuritySettings): Promise<void> {
+    localStorage.setItem(STORAGE_KEYS.SECURITY_SETTINGS, JSON.stringify(data));
+    console.log("Security settings saved:", data);
   }
 };
 
-// Get notification preferences
-export const getNotificationPreferences = async (): Promise<NotificationPreferences> => {
-  try {
-    // In a real application with Supabase, you'd fetch this from a settings table
-    return defaultNotificationPreferences;
-  } catch (error) {
-    console.error('Error fetching notification preferences:', error);
-    toast.error("Failed to load notification preferences");
-    return defaultNotificationPreferences;
+// Backup Settings Service
+export const backupSettingsService = {
+  async get(): Promise<BackupSettings> {
+    const stored = localStorage.getItem(STORAGE_KEYS.BACKUP_SETTINGS);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return {
+      automatedBackups: true,
+      backupFrequency: "weekly",
+      retentionPeriod: "30"
+    };
+  },
+
+  async save(data: BackupSettings): Promise<void> {
+    localStorage.setItem(STORAGE_KEYS.BACKUP_SETTINGS, JSON.stringify(data));
+    console.log("Backup settings saved:", data);
   }
 };
 
-// Save notification preferences
-export const saveNotificationPreferences = async (prefs: NotificationPreferences): Promise<boolean> => {
-  try {
-    // In a real application, you'd save this to Supabase
-    console.log("Saving notification preferences:", prefs);
-    // Simulating API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return true;
-  } catch (error) {
-    console.error('Error saving notification preferences:', error);
-    return false;
-  }
-};
-
-// Get security settings
-export const getSecuritySettings = async (): Promise<SecuritySettings> => {
-  try {
-    // In a real application with Supabase, you'd fetch this from a settings table
-    return defaultSecuritySettings;
-  } catch (error) {
-    console.error('Error fetching security settings:', error);
-    toast.error("Failed to load security settings");
-    return defaultSecuritySettings;
-  }
-};
-
-// Save security settings
-export const saveSecuritySettings = async (settings: SecuritySettings): Promise<boolean> => {
-  try {
-    // In a real application, you'd save this to Supabase
-    console.log("Saving security settings:", settings);
-    // Simulating API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return true;
-  } catch (error) {
-    console.error('Error saving security settings:', error);
-    return false;
-  }
-};
-
-// Get backup settings
-export const getBackupSettings = async (): Promise<BackupSettings> => {
-  try {
-    // In a real application with Supabase, you'd fetch this from a settings table
-    return defaultBackupSettings;
-  } catch (error) {
-    console.error('Error fetching backup settings:', error);
-    toast.error("Failed to load backup settings");
-    return defaultBackupSettings;
-  }
-};
-
-// Save backup settings
-export const saveBackupSettings = async (settings: BackupSettings): Promise<boolean> => {
-  try {
-    // In a real application, you'd save this to Supabase
-    console.log("Saving backup settings:", settings);
-    // Simulating API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return true;
-  } catch (error) {
-    console.error('Error saving backup settings:', error);
-    return false;
-  }
-};
-
-// Export data backup
-export const exportBackup = async (): Promise<boolean> => {
-  try {
-    // In a real application, this would generate a full system backup
-    console.log("Exporting system backup");
-    // Simulating backup generation delay
+// Integration Services
+export const integrationService = {
+  async connectService(serviceName: string): Promise<boolean> {
+    // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log(`Connected to ${serviceName}`);
     return true;
-  } catch (error) {
-    console.error('Error exporting backup:', error);
-    toast.error("Failed to export backup");
-    return false;
+  },
+
+  async regenerateApiKey(): Promise<string> {
+    // Simulate API call to regenerate key
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const newKey = 'ak_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    console.log("New API key generated:", newKey);
+    return newKey;
   }
 };
 
-// Regenerate API key
-export const regenerateApiKey = async (): Promise<string | null> => {
-  try {
-    // In a real application, this would generate a new API key
-    console.log("Regenerating API key");
-    // Simulating API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Generate a random "API key"
-    const newKey = Math.random().toString(36).substring(2, 15) + 
-                   Math.random().toString(36).substring(2, 15);
-    return newKey;
-  } catch (error) {
-    console.error('Error regenerating API key:', error);
-    toast.error("Failed to regenerate API key");
-    return null;
+// Backup/Import Services
+export const backupService = {
+  async exportBackup(): Promise<void> {
+    // Simulate backup export
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Create a mock backup file
+    const backupData = {
+      company: await companyInfoService.get(),
+      system: await systemPreferencesService.get(),
+      notifications: await notificationPreferencesService.get(),
+      security: await securitySettingsService.get(),
+      backup: await backupSettingsService.get(),
+      timestamp: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `it-inventory-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log("Backup exported successfully");
+  },
+
+  async importAssets(): Promise<void> {
+    // Simulate import process
+    console.log("Asset import initiated");
+    // In a real app, this would open a file picker
+  },
+
+  async restoreFromBackup(): Promise<void> {
+    // Simulate restore process
+    console.log("Backup restore initiated");
+    // In a real app, this would open a file picker
   }
 };

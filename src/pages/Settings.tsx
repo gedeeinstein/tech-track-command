@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { 
   Card, 
   CardContent, 
@@ -25,104 +25,44 @@ import {
   Save,
   Upload, 
   Download,
+  Loader2,
 } from "lucide-react";
-
-// Company information interface
-interface CompanyInfo {
-  name: string;
-  email: string;
-  phone: string;
-  website: string;
-}
-
-// System preferences interface
-interface SystemPreferences {
-  maintenanceReminders: boolean;
-  warrantyAlerts: boolean;
-  autoLogout: boolean;
-  dateFormat: string;
-  timezone: string;
-}
-
-// Notification preferences interface
-interface NotificationPreferences {
-  emailNotifications: boolean;
-  browserNotifications: boolean;
-  notifyMaintenance: boolean;
-  notifyWarranty: boolean;
-  notifyInventory: boolean;
-  notifyUserAccount: boolean;
-  notificationEmail: string;
-}
-
-// Security settings interface
-interface SecuritySettings {
-  minPasswordLength: string;
-  requireSpecialChars: boolean;
-  requireNumbers: boolean;
-  passwordExpiry: string;
-  requireTwoFactor: boolean;
-  requireTwoFactorAdmin: boolean;
-  maxFailedAttempts: string;
-  lockoutTime: string;
-  sessionTimeout: boolean;
-}
-
-// Backup settings interface
-interface BackupSettings {
-  automatedBackups: boolean;
-  backupFrequency: string;
-  retentionPeriod: string;
-}
+import { useSettings } from "@/hooks/useSettings";
 
 const Settings: React.FC = () => {
-  // State for company information
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
-    name: "",
-    email: "",
-    phone: "",
-    website: ""
-  });
-
-  // State for system preferences
-  const [systemPreferences, setSystemPreferences] = useState<SystemPreferences>({
-    maintenanceReminders: true,
-    warrantyAlerts: true,
-    autoLogout: false,
-    dateFormat: "MM/DD/YYYY",
-    timezone: "UTC-8"
-  });
-
-  // State for notification preferences
-  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({
-    emailNotifications: true,
-    browserNotifications: true,
-    notifyMaintenance: true,
-    notifyWarranty: true,
-    notifyInventory: false,
-    notifyUserAccount: false,
-    notificationEmail: ""
-  });
-
-  // State for security settings
-  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
-    minPasswordLength: "10",
-    requireSpecialChars: true,
-    requireNumbers: true,
-    passwordExpiry: "90",
-    requireTwoFactor: true,
-    requireTwoFactorAdmin: true,
-    maxFailedAttempts: "5",
-    lockoutTime: "30",
-    sessionTimeout: true
-  });
-
-  // State for backup settings
-  const [backupSettings, setBackupSettings] = useState<BackupSettings>({
-    automatedBackups: true,
-    backupFrequency: "weekly",
-    retentionPeriod: "30"
-  });
+  const {
+    // State
+    companyInfo,
+    systemPreferences,
+    notificationPrefs,
+    securitySettings,
+    backupSettings,
+    isLoading,
+    apiKey,
+    
+    // Setters
+    setCompanyInfo,
+    setSystemPreferences,
+    setNotificationPrefs,
+    setSecuritySettings,
+    setBackupSettings,
+    
+    // Save functions
+    saveCompanyInfo,
+    saveSystemPreferences,
+    saveNotificationSettings,
+    saveSecuritySettings,
+    saveBackupSettings,
+    
+    // Integration functions
+    connectService,
+    regenerateApiKey,
+    
+    // Backup functions
+    exportBackup,
+    importAssets,
+    restoreBackup
+  } = useSettings();
 
   // Handle company info changes
   const handleCompanyInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +73,7 @@ const Settings: React.FC = () => {
   };
 
   // Handle system preferences toggle changes
-  const handleSystemToggleChange = (value: boolean, field: keyof SystemPreferences) => {
+  const handleSystemToggleChange = (value: boolean, field: keyof typeof systemPreferences) => {
     setSystemPreferences({
       ...systemPreferences,
       [field]: value
@@ -149,7 +89,7 @@ const Settings: React.FC = () => {
   };
 
   // Handle notification preferences toggle changes
-  const handleNotificationToggleChange = (value: boolean, field: keyof NotificationPreferences) => {
+  const handleNotificationToggleChange = (value: boolean, field: keyof typeof notificationPrefs) => {
     setNotificationPrefs({
       ...notificationPrefs,
       [field]: value
@@ -165,7 +105,7 @@ const Settings: React.FC = () => {
   };
 
   // Handle security settings toggle changes
-  const handleSecurityToggleChange = (value: boolean, field: keyof SecuritySettings) => {
+  const handleSecurityToggleChange = (value: boolean, field: keyof typeof securitySettings) => {
     setSecuritySettings({
       ...securitySettings,
       [field]: value
@@ -181,7 +121,7 @@ const Settings: React.FC = () => {
   };
 
   // Handle backup settings toggle changes
-  const handleBackupToggleChange = (value: boolean, field: keyof BackupSettings) => {
+  const handleBackupToggleChange = (value: boolean, field: keyof typeof backupSettings) => {
     setBackupSettings({
       ...backupSettings,
       [field]: value
@@ -196,73 +136,109 @@ const Settings: React.FC = () => {
     });
   };
 
-  // Save company information
-  const saveCompanyInfo = () => {
-    // In a real application, you'd save this to a database or local storage
-    console.log("Saving company info:", companyInfo);
-    toast.success("Company information saved successfully");
+  // Enhanced save functions with async handling
+  const handleSaveCompanyInfo = async () => {
+    const success = await saveCompanyInfo();
+    if (success) {
+      toast.success("Company information saved successfully");
+    } else {
+      toast.error("Failed to save company information");
+    }
   };
 
-  // Save system preferences
-  const saveSystemPreferences = () => {
-    console.log("Saving system preferences:", systemPreferences);
-    toast.success("System preferences saved successfully");
+  const handleSaveSystemPreferences = async () => {
+    const success = await saveSystemPreferences();
+    if (success) {
+      toast.success("System preferences saved successfully");
+    } else {
+      toast.error("Failed to save system preferences");
+    }
   };
 
-  // Save notification settings
-  const saveNotificationSettings = () => {
-    console.log("Saving notification preferences:", notificationPrefs);
-    toast.success("Notification settings saved successfully");
+  const handleSaveNotificationSettings = async () => {
+    const success = await saveNotificationSettings();
+    if (success) {
+      toast.success("Notification settings saved successfully");
+    } else {
+      toast.error("Failed to save notification settings");
+    }
   };
 
-  // Save security settings
-  const saveSecuritySettings = () => {
-    console.log("Saving security settings:", securitySettings);
-    toast.success("Security settings saved successfully");
+  const handleSaveSecuritySettings = async () => {
+    const success = await saveSecuritySettings();
+    if (success) {
+      toast.success("Security settings saved successfully");
+    } else {
+      toast.error("Failed to save security settings");
+    }
   };
 
-  // Save backup settings
-  const saveBackupSettings = () => {
-    console.log("Saving backup settings:", backupSettings);
-    toast.success("Backup settings saved successfully");
+  const handleSaveBackupSettings = async () => {
+    const success = await saveBackupSettings();
+    if (success) {
+      toast.success("Backup settings saved successfully");
+    } else {
+      toast.error("Failed to save backup settings");
+    }
   };
 
-  // Export data as backup
-  const exportBackup = () => {
-    console.log("Exporting full backup");
-    toast.success("Backup export initiated. Your download will start shortly.");
-    // In a real app, this would trigger a download
-  };
-
-  // Import assets from CSV
-  const importAssets = () => {
-    // In a real app, this would open a file picker
-    console.log("Import assets triggered");
-    toast.info("Please select a CSV file to import assets");
-  };
-
-  // Restore from backup
-  const restoreBackup = () => {
-    // In a real app, this would open a file picker
-    console.log("Restore from backup triggered");
-    toast.info("Please select a backup file to restore");
-  };
-
-  // Connect to external service
-  const connectService = (service: string) => {
-    console.log(`Connecting to ${service}`);
+  // Enhanced integration functions
+  const handleConnectService = async (service: string) => {
     toast.info(`Connecting to ${service}...`);
-    // Simulate connection delay
-    setTimeout(() => {
+    const success = await connectService(service);
+    if (success) {
       toast.success(`Connected to ${service} successfully!`);
-    }, 1500);
+    } else {
+      toast.error(`Failed to connect to ${service}`);
+    }
   };
 
-  // Regenerate API key
-  const regenerateApiKey = () => {
-    console.log("Regenerating API key");
-    toast.success("API key regenerated successfully");
+  const handleRegenerateApiKey = async () => {
+    const success = await regenerateApiKey();
+    if (success) {
+      toast.success("API key regenerated successfully");
+    } else {
+      toast.error("Failed to regenerate API key");
+    }
   };
+
+  // Enhanced backup functions
+  const handleExportBackup = async () => {
+    toast.info("Preparing backup export...");
+    const success = await exportBackup();
+    if (success) {
+      toast.success("Backup export initiated. Your download will start shortly.");
+    } else {
+      toast.error("Failed to export backup");
+    }
+  };
+
+  const handleImportAssets = async () => {
+    const success = await importAssets();
+    if (success) {
+      toast.info("Please select a CSV file to import assets");
+    } else {
+      toast.error("Failed to initiate asset import");
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    const success = await restoreBackup();
+    if (success) {
+      toast.info("Please select a backup file to restore");
+    } else {
+      toast.error("Failed to initiate backup restore");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading settings...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -347,7 +323,7 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <Button className="mt-4" onClick={saveCompanyInfo}>Save Company Info</Button>
+              <Button className="mt-4" onClick={handleSaveCompanyInfo}>Save Company Info</Button>
             </CardContent>
           </Card>
           
@@ -424,7 +400,7 @@ const Settings: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <Button className="mt-4" onClick={saveSystemPreferences}>Save Preferences</Button>
+              <Button className="mt-4" onClick={handleSaveSystemPreferences}>Save Preferences</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -529,7 +505,7 @@ const Settings: React.FC = () => {
                 </div>
               </div>
               
-              <Button className="mt-4" onClick={saveNotificationSettings}>Save Notification Settings</Button>
+              <Button className="mt-4" onClick={handleSaveNotificationSettings}>Save Notification Settings</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -556,7 +532,7 @@ const Settings: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => connectService('Help Desk System')}>Connect</Button>
+                <Button variant="outline" onClick={() => handleConnectService('Help Desk System')}>Connect</Button>
               </div>
               
               <div className="flex items-center justify-between border p-4 rounded-lg">
@@ -571,7 +547,7 @@ const Settings: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => connectService('Procurement System')}>Connect</Button>
+                <Button variant="outline" onClick={() => handleConnectService('Procurement System')}>Connect</Button>
               </div>
               
               <div className="flex items-center justify-between border p-4 rounded-lg">
@@ -586,14 +562,14 @@ const Settings: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => connectService('Directory Service')}>Connect</Button>
+                <Button variant="outline" onClick={() => handleConnectService('Directory Service')}>Connect</Button>
               </div>
               
               <div className="space-y-2 pt-2">
                 <Label htmlFor="api-key">System API Key</Label>
                 <div className="flex space-x-2">
-                  <Input id="api-key" value="••••••••••••••••••••••••••••••" readOnly />
-                  <Button variant="outline" onClick={regenerateApiKey}>Regenerate</Button>
+                  <Input id="api-key" value={apiKey} readOnly />
+                  <Button variant="outline" onClick={handleRegenerateApiKey}>Regenerate</Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Use this API key to authenticate external systems connecting to your inventory
@@ -618,7 +594,7 @@ const Settings: React.FC = () => {
                 <p className="text-sm text-muted-foreground">
                   Export all system data as a compressed archive file
                 </p>
-                <Button className="flex items-center gap-1" variant="outline" onClick={exportBackup}>
+                <Button className="flex items-center gap-1" variant="outline" onClick={handleExportBackup}>
                   <Download className="h-4 w-4" />
                   <span>Export Full Backup</span>
                 </Button>
@@ -675,18 +651,18 @@ const Settings: React.FC = () => {
                   Import data from CSV files or restore from backup
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button className="flex items-center gap-1" variant="outline" onClick={importAssets}>
+                  <Button className="flex items-center gap-1" variant="outline" onClick={handleImportAssets}>
                     <Upload className="h-4 w-4" />
                     <span>Import Assets (CSV)</span>
                   </Button>
-                  <Button className="flex items-center gap-1" variant="outline" onClick={restoreBackup}>
+                  <Button className="flex items-center gap-1" variant="outline" onClick={handleRestoreBackup}>
                     <Upload className="h-4 w-4" />
                     <span>Restore from Backup</span>
                   </Button>
                 </div>
               </div>
               
-              <Button className="mt-4" onClick={saveBackupSettings}>Save Backup Settings</Button>
+              <Button className="mt-4" onClick={handleSaveBackupSettings}>Save Backup Settings</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -835,7 +811,7 @@ const Settings: React.FC = () => {
                 </div>
               </div>
               
-              <Button className="flex items-center gap-1" onClick={saveSecuritySettings}>
+              <Button className="flex items-center gap-1" onClick={handleSaveSecuritySettings}>
                 <Save className="h-4 w-4" />
                 <span>Save Security Settings</span>
               </Button>
